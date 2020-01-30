@@ -258,18 +258,24 @@ void QCodeEditor::highlightOccurrences()
     if (cursor.hasSelection())
     {
         auto text = cursor.selectedText();
-        auto doc = document();
-        cursor = doc->find(text, 0, QTextDocument::FindWholeWords | QTextDocument::FindCaseSensitively);
-        while (!cursor.isNull())
+        if (QRegularExpression(
+                R"((?:[_a-zA-Z][_a-zA-Z0-9]*)|(?<=\b|\s|^)(?i)(?:(?:(?:(?:(?:\d+(?:'\d+)*)?\.(?:\d+(?:'\d+)*)(?:e[+-]?(?:\d+(?:'\d+)*))?)|(?:(?:\d+(?:'\d+)*)\.(?:e[+-]?(?:\d+(?:'\d+)*))?)|(?:(?:\d+(?:'\d+)*)(?:e[+-]?(?:\d+(?:'\d+)*)))|(?:0x(?:[0-9a-f]+(?:'[0-9a-f]+)*)?\.(?:[0-9a-f]+(?:'[0-9a-f]+)*)(?:p[+-]?(?:\d+(?:'\d+)*)))|(?:0x(?:[0-9a-f]+(?:'[0-9a-f]+)*)\.?(?:p[+-]?(?:\d+(?:'\d+)*))))[lf]?)|(?:(?:(?:[1-9]\d*(?:'\d+)*)|(?:0[0-7]*(?:'[0-7]+)*)|(?:0x[0-9a-f]+(?:'[0-9a-f]+)*)|(?:0b[01]+(?:'[01]+)*))(?:u?l{0,2}|l{0,2}u?)))(?=\b|\s|$))")
+                .match(text)
+                .captured() == text)
         {
-            if (cursor != textCursor())
+            auto doc = document();
+            cursor = doc->find(text, 0, QTextDocument::FindWholeWords | QTextDocument::FindCaseSensitively);
+            while (!cursor.isNull())
             {
-                QTextEdit::ExtraSelection e;
-                e.cursor = cursor;
-                e.format.setFontUnderline(true);
-                extra2.push_back(e);
+                if (cursor != textCursor())
+                {
+                    QTextEdit::ExtraSelection e;
+                    e.cursor = cursor;
+                    e.format.setFontUnderline(true);
+                    extra2.push_back(e);
+                }
+                cursor = doc->find(text, cursor, QTextDocument::FindWholeWords | QTextDocument::FindCaseSensitively);
             }
-            cursor = doc->find(text, cursor, QTextDocument::FindWholeWords | QTextDocument::FindCaseSensitively);
         }
     }
 }
