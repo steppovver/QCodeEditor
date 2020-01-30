@@ -402,10 +402,48 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
 
     if (!completerSkip)
     {
-        if (m_replaceTab && e->key() == Qt::Key_Tab && e->modifiers() == Qt::NoModifier)
+        if (e->key() == Qt::Key_Tab && e->modifiers() == Qt::NoModifier)
         {
-            insertPlainText(m_tabReplace);
-            return;
+            auto cursor = textCursor();
+            if (cursor.hasSelection())
+            {
+                auto lines = toPlainText().remove('\r').split('\n');
+                int selectionStart = cursor.selectionStart();
+                int selectionEnd = cursor.selectionEnd();
+                bool cursorAtEnd = cursor.position() == selectionEnd;
+                cursor.setPosition(selectionStart);
+                int lineStart = cursor.blockNumber();
+                cursor.setPosition(selectionEnd);
+                int lineEnd = cursor.blockNumber();
+                QString newText;
+                QTextStream str(&newText);
+                for (int i = lineStart; i <= lineEnd; ++i)
+                {
+                    auto line = lines[i];
+                    if (m_replaceTab)
+                        str << m_tabReplace;
+                    else
+                        str << "\t";
+                    str << line << endl;
+                }
+                cursor.movePosition(QTextCursor::Start);
+                cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
+                cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart + 1);
+                cursor.insertText(newText);
+                int pos = selectionStart + (m_replaceTab ? tabReplaceSize() : 1);
+                int pos2 = selectionEnd + (m_replaceTab ? tabReplaceSize() : 1) * (lineEnd - lineStart + 1);
+                if (!cursorAtEnd)
+                    qSwap(pos, pos2);
+                cursor.setPosition(pos);
+                cursor.setPosition(pos2, QTextCursor::KeepAnchor);
+                setTextCursor(cursor);
+                return;
+            }
+            else if (m_replaceTab)
+            {
+                insertPlainText(m_tabReplace);
+                return;
+            }
         }
 
         // Auto indentation
