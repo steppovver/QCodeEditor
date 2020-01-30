@@ -30,7 +30,6 @@ set(INCLUDE_FILES
     include/QLuaCompleter
     include/QLuaHighlighter
     include/QPythonHighlighter
-    include/QFramedTextAttribute
     include/internal/QHighlightRule.hpp
     include/internal/QHighlightBlockRule.hpp
     include/internal/QCodeEditor.hpp
@@ -47,7 +46,6 @@ set(INCLUDE_FILES
     include/internal/QLuaHighlighter.hpp
     include/internal/QPythonCompleter.hpp
     include/internal/QPythonHighlighter.hpp
-    include/internal/QFramedTextAttribute.hpp
 )
 
 set(SOURCE_FILES
@@ -65,7 +63,6 @@ set(SOURCE_FILES
     src/internal/QLuaHighlighter.cpp
     src/internal/QPythonCompleter.cpp
     src/internal/QPythonHighlighter.cpp
-    src/internal/QFramedTextAttribute.cpp
 )
 
 # Create code for QObjects

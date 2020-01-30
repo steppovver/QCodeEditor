@@ -16,16 +16,16 @@ class QCodeEditor : public QTextEdit
 {
     Q_OBJECT
 
-public:
+  public:
     /**
      * @brief Constructor.
      * @param widget Pointer to parent widget.
      */
-    explicit QCodeEditor(QWidget* widget=nullptr);
+    explicit QCodeEditor(QWidget *widget = nullptr);
 
     // Disable copying
-    QCodeEditor(const QCodeEditor&) = delete;
-    QCodeEditor& operator=(const QCodeEditor&) = delete;
+    QCodeEditor(const QCodeEditor &) = delete;
+    QCodeEditor &operator=(const QCodeEditor &) = delete;
 
     /**
      * @brief Method for getting first visible block
@@ -38,13 +38,13 @@ public:
      * @brief Method for setting highlighter.
      * @param highlighter Pointer to syntax highlighter.
      */
-    void setHighlighter(QStyleSyntaxHighlighter* highlighter);
+    void setHighlighter(QStyleSyntaxHighlighter *highlighter);
 
     /**
      * @brief Method for setting syntax sty.e.
      * @param style Pointer to syntax style.
      */
-    void setSyntaxStyle(QSyntaxStyle* style);
+    void setSyntaxStyle(QSyntaxStyle *style);
 
     /**
      * @brief Method setting auto parentheses enabled.
@@ -98,15 +98,15 @@ public:
      * @brief Method for setting completer.
      * @param completer Pointer to completer object.
      */
-    void setCompleter(QCompleter* completer);
+    void setCompleter(QCompleter *completer);
 
     /**
      * @brief Method for getting completer.
      * @return Pointer to completer.
      */
-    QCompleter* completer() const;
+    QCompleter *completer() const;
 
-public Q_SLOTS:
+  public Q_SLOTS:
 
     /**
      * @brief Slot, that performs insertion of
@@ -127,45 +127,40 @@ public Q_SLOTS:
      * part of line number area.
      * @param rect Area that has to be updated.
      */
-    void updateLineNumberArea(const QRect& rect);
+    void updateLineNumberArea(const QRect &rect);
 
     /**
      * @brief Slot, that will proceed extra selection
      * for current cursor position.
      */
-    void updateExtraSelection();
+    void updateExtraSelection1();
+    void updateExtraSelection2();
 
     /**
      * @brief Slot, that will update editor style.
      */
     void updateStyle();
 
-    /**
-     * @brief Slot, that will be called on selection
-     * change.
-     */
-    void onSelectionChanged();
-
-protected:
+  protected:
     /**
      * @brief Method, that's called on any text insertion of
      * mimedata into editor. If it's text - it inserts text
      * as plain text.
      */
-    void insertFromMimeData(const QMimeData* source) override;
+    void insertFromMimeData(const QMimeData *source) override;
 
     /**
      * @brief Method, that's called on editor painting. This
      * method if overloaded for line number area redraw.
      */
-    void paintEvent(QPaintEvent* e) override;
+    void paintEvent(QPaintEvent *e) override;
 
     /**
      * @brief Method, that's called on any widget resize.
      * This method if overloaded for line number area
      * resizing.
      */
-    void resizeEvent(QResizeEvent* e) override;
+    void resizeEvent(QResizeEvent *e) override;
 
     /**
      * @brief Method, that's called on any key press, posted
@@ -176,7 +171,7 @@ protected:
      * 3. Low indentation
      * 4. Auto parenthesis
      */
-    void keyPressEvent(QKeyEvent* e) override;
+    void keyPressEvent(QKeyEvent *e) override;
 
     /**
      * @brief Method, that's called on focus into widget.
@@ -185,14 +180,7 @@ protected:
      */
     void focusInEvent(QFocusEvent *e) override;
 
-private:
-
-    /**
-     * @brief Method for initializing document
-     * layout handlers.
-     */
-    void initDocumentLayoutHandlers();
-
+  private:
     /**
      * @brief Method for initializing default
      * monospace font.
@@ -206,12 +194,6 @@ private:
     void performConnections();
 
     /**
-     * @brief Method, that performs selection
-     * frame selection.
-     */
-    void handleSelectionQuery(QTextCursor cursor);
-
-    /**
      * @brief Method for updating geometry of line number area.
      */
     void updateLineGeometry();
@@ -223,7 +205,7 @@ private:
      * @return Shall event be dropped.
      */
     bool proceedCompleterBegin(QKeyEvent *e);
-    void proceedCompleterEnd(QKeyEvent* e);
+    void proceedCompleterEnd(QKeyEvent *e);
 
     /**
      * @brief Method for getting character under
@@ -243,13 +225,15 @@ private:
      * @brief Method, that adds highlighting of
      * currently selected line to extra selection list.
      */
-    void highlightCurrentLine(QList<QTextEdit::ExtraSelection>& extraSelection);
+    void highlightCurrentLine();
 
     /**
      * @brief Method, that adds highlighting of
      * parenthesis if available.
      */
-    void highlightParenthesis(QList<QTextEdit::ExtraSelection>& extraSelection);
+    void highlightParenthesis();
+
+    void highlightOccurrences();
 
     /**
      * @brief Method for getting number of indentation
@@ -258,16 +242,15 @@ private:
      */
     int getIndentationSpaces();
 
-    QStyleSyntaxHighlighter* m_highlighter;
-    QSyntaxStyle* m_syntaxStyle;
-    QLineNumberArea* m_lineNumberArea;
-    QCompleter* m_completer;
-
-    QFramedTextAttribute* m_framedAttribute;
+    QStyleSyntaxHighlighter *m_highlighter;
+    QSyntaxStyle *m_syntaxStyle;
+    QLineNumberArea *m_lineNumberArea;
+    QCompleter *m_completer;
 
     bool m_autoIndentation;
     bool m_autoParentheses;
     bool m_replaceTab;
     QString m_tabReplace;
-};
 
+    QList<QTextEdit::ExtraSelection> extra1, extra2;
+};

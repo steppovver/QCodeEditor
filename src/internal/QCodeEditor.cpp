@@ -1,7 +1,6 @@
 // QCodeEditor
 #include <QCXXHighlighter>
 #include <QCodeEditor>
-#include <QFramedTextAttribute>
 #include <QLineNumberArea>
 #include <QStyleSyntaxHighlighter>
 #include <QSyntaxStyle>
@@ -24,19 +23,13 @@ static QVector<QPair<QString, QString>> parentheses = {{"(", ")"}, {"{", "}"}, {
 
 QCodeEditor::QCodeEditor(QWidget *widget)
     : QTextEdit(widget), m_highlighter(nullptr), m_syntaxStyle(nullptr), m_lineNumberArea(new QLineNumberArea(this)),
-      m_completer(nullptr), m_framedAttribute(new QFramedTextAttribute(this)), m_autoIndentation(true),
-      m_autoParentheses(true), m_replaceTab(true), m_tabReplace(QString(4, ' '))
+      m_completer(nullptr), m_autoIndentation(true), m_autoParentheses(true), m_replaceTab(true),
+      m_tabReplace(QString(4, ' ')), extra1(), extra2()
 {
-    initDocumentLayoutHandlers();
     initFont();
     performConnections();
 
     setSyntaxStyle(QSyntaxStyle::defaultStyle());
-}
-
-void QCodeEditor::initDocumentLayoutHandlers()
-{
-    document()->documentLayout()->registerHandler(QFramedTextAttribute::type(), m_framedAttribute);
 }
 
 void QCodeEditor::initFont()
@@ -54,9 +47,8 @@ void QCodeEditor::performConnections()
 
     connect(verticalScrollBar(), &QScrollBar::valueChanged, [this](int) { m_lineNumberArea->update(); });
 
-    connect(this, &QTextEdit::cursorPositionChanged, this, &QCodeEditor::updateExtraSelection);
-
-    connect(this, &QTextEdit::selectionChanged, this, &QCodeEditor::onSelectionChanged);
+    connect(this, &QTextEdit::cursorPositionChanged, this, &QCodeEditor::updateExtraSelection1);
+    connect(this, &QTextEdit::selectionChanged, this, &QCodeEditor::updateExtraSelection2);
 }
 
 void QCodeEditor::setHighlighter(QStyleSyntaxHighlighter *highlighter)
@@ -79,7 +71,6 @@ void QCodeEditor::setSyntaxStyle(QSyntaxStyle *style)
 {
     m_syntaxStyle = style;
 
-    m_framedAttribute->setSyntaxStyle(m_syntaxStyle);
     m_lineNumberArea->setSyntaxStyle(m_syntaxStyle);
 
     if (m_highlighter)
@@ -113,36 +104,8 @@ void QCodeEditor::updateStyle()
         setPalette(currentPalette);
     }
 
-    updateExtraSelection();
-}
-
-void QCodeEditor::onSelectionChanged()
-{
-    auto selected = textCursor().selectedText();
-
-    auto cursor = textCursor();
-
-    // Cursor is null if setPlainText was called.
-    if (cursor.isNull())
-    {
-        return;
-    }
-
-    cursor.movePosition(QTextCursor::MoveOperation::Left);
-    cursor.select(QTextCursor::SelectionType::WordUnderCursor);
-
-    QSignalBlocker blocker(this);
-    m_framedAttribute->clear(cursor);
-
-    if (selected.size() > 1 && cursor.selectedText() == selected)
-    {
-        auto backup = textCursor();
-
-        // Perform search selecting
-        handleSelectionQuery(cursor);
-
-        setTextCursor(backup);
-    }
+    updateExtraSelection1();
+    updateExtraSelection2();
 }
 
 void QCodeEditor::resizeEvent(QResizeEvent *e)
@@ -174,31 +137,26 @@ void QCodeEditor::updateLineNumberArea(const QRect &rect)
     }
 }
 
-void QCodeEditor::handleSelectionQuery(QTextCursor cursor)
+void QCodeEditor::updateExtraSelection1()
 {
+    extra1.clear();
 
-    auto searchIterator = cursor;
-    searchIterator.movePosition(QTextCursor::Start);
-    searchIterator = document()->find(cursor.selectedText(), searchIterator);
-    while (searchIterator.hasSelection())
-    {
-        m_framedAttribute->frame(searchIterator);
+    highlightCurrentLine();
+    highlightParenthesis();
 
-        searchIterator = document()->find(cursor.selectedText(), searchIterator);
-    }
+    setExtraSelections(extra1 + extra2);
 }
 
-void QCodeEditor::updateExtraSelection()
+void QCodeEditor::updateExtraSelection2()
 {
-    QList<QTextEdit::ExtraSelection> extra;
+    extra2.clear();
 
-    highlightCurrentLine(extra);
-    highlightParenthesis(extra);
+    highlightOccurrences();
 
-    setExtraSelections(extra);
+    setExtraSelections(extra1 + extra2);
 }
 
-void QCodeEditor::highlightParenthesis(QList<QTextEdit::ExtraSelection> &extraSelection)
+void QCodeEditor::highlightParenthesis()
 {
     auto currentSymbol = charUnderCursor();
     auto prevSymbol = charUnderCursor(-1);
@@ -265,20 +223,20 @@ void QCodeEditor::highlightParenthesis(QList<QTextEdit::ExtraSelection> &extraSe
 
             selection.cursor.movePosition(QTextCursor::MoveOperation::Right, QTextCursor::MoveMode::KeepAnchor, 1);
 
-            extraSelection.append(selection);
+            extra1.append(selection);
 
             selection.cursor = textCursor();
             selection.cursor.clearSelection();
             selection.cursor.movePosition(directionEnum, QTextCursor::MoveMode::KeepAnchor, 1);
 
-            extraSelection.append(selection);
+            extra1.append(selection);
         }
 
         break;
     }
 }
 
-void QCodeEditor::highlightCurrentLine(QList<QTextEdit::ExtraSelection> &extraSelection)
+void QCodeEditor::highlightCurrentLine()
 {
     if (!isReadOnly())
     {
@@ -290,7 +248,29 @@ void QCodeEditor::highlightCurrentLine(QList<QTextEdit::ExtraSelection> &extraSe
         selection.cursor = textCursor();
         selection.cursor.clearSelection();
 
-        extraSelection.append(selection);
+        extra1.append(selection);
+    }
+}
+
+void QCodeEditor::highlightOccurrences()
+{
+    auto cursor = textCursor();
+    if (cursor.hasSelection())
+    {
+        auto text = cursor.selectedText();
+        auto doc = document();
+        cursor = doc->find(text, 0, QTextDocument::FindWholeWords | QTextDocument::FindCaseSensitively);
+        while (!cursor.isNull())
+        {
+            if (cursor != textCursor())
+            {
+                QTextEdit::ExtraSelection e;
+                e.cursor = cursor;
+                e.format.setFontUnderline(true);
+                extra2.push_back(e);
+            }
+            cursor = doc->find(text, cursor, QTextDocument::FindWholeWords | QTextDocument::FindCaseSensitively);
+        }
     }
 }
 
