@@ -18,6 +18,7 @@
 #include <QShortcut>
 #include <QTextBlock>
 #include <QTextCharFormat>
+#include <QTextStream>
 
 static QVector<QPair<QString, QString>> parentheses = {{"(", ")"}, {"{", "}"}, {"[", "]"}, {"\"", "\""}, {"'", "'"}};
 
@@ -449,16 +450,69 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
         }
 
         // Shortcut for moving line to left
-        if (m_replaceTab && e->key() == Qt::Key_Backtab)
+        if (e->key() == Qt::Key_Backtab)
         {
-            indentationLevel = std::min(indentationLevel, m_tabReplace.size());
-
             auto cursor = textCursor();
-
-            cursor.movePosition(QTextCursor::MoveOperation::StartOfLine);
-            cursor.movePosition(QTextCursor::MoveOperation::Right, QTextCursor::MoveMode::KeepAnchor, indentationLevel);
-
-            cursor.removeSelectedText();
+            auto lines = toPlainText().remove('\r').split('\n');
+            int selectionStart = cursor.selectionStart();
+            int selectionEnd = cursor.selectionEnd();
+            bool cursorAtEnd = cursor.position() == selectionEnd;
+            cursor.setPosition(selectionStart);
+            int lineStart = cursor.blockNumber();
+            cursor.setPosition(selectionEnd);
+            int lineEnd = cursor.blockNumber();
+            QString newText;
+            QTextStream str(&newText);
+            int deleteTotal = 0, deleteFirst = 0;
+            for (int i = lineStart; i <= lineEnd; ++i)
+            {
+                int len = 0;
+                auto line = lines[i];
+                if (!line.isEmpty())
+                {
+                    if (line.front() == '\t')
+                    {
+                        len = 1;
+                    }
+                    else
+                    {
+                        for (len = 0; len < line.length() && len < tabReplaceSize(); ++len)
+                        {
+                            if (!line[len].isSpace())
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (i == lineStart)
+                    deleteFirst = len;
+                deleteTotal += len;
+                str << line.mid(len) << endl;
+            }
+            cursor.movePosition(QTextCursor::Start);
+            cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
+            cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart + 1);
+            cursor.insertText(newText);
+            cursor.setPosition(qMax(0, selectionStart - deleteFirst));
+            if (cursor.blockNumber() < lineStart)
+            {
+                cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart - cursor.blockNumber());
+                cursor.movePosition(QTextCursor::StartOfLine);
+            }
+            int pos = cursor.position();
+            cursor.setPosition(selectionEnd - deleteTotal);
+            if (cursor.blockNumber() < lineEnd)
+            {
+                cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineEnd - cursor.blockNumber());
+                cursor.movePosition(QTextCursor::StartOfLine);
+            }
+            int pos2 = cursor.position();
+            if (!cursorAtEnd)
+                qSwap(pos, pos2);
+            cursor.setPosition(pos);
+            cursor.setPosition(pos2, QTextCursor::KeepAnchor);
+            setTextCursor(cursor);
             return;
         }
 
