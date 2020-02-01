@@ -501,6 +501,39 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             setTextCursor(cursor);
         }
 
+        // Shortcut for delete selected lines
+        if (e->key() == Qt::Key_K && e->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier))
+        {
+            auto cursor = textCursor();
+            int selectionStart = cursor.selectionStart();
+            int selectionEnd = cursor.selectionEnd();
+            cursor.setPosition(selectionStart);
+            int lineStart = cursor.blockNumber();
+            cursor.setPosition(selectionEnd);
+            int lineEnd = cursor.blockNumber();
+            moveCursor(QTextCursor::MoveOperation::Up);
+            cursor.movePosition(QTextCursor::Start);
+            if (lineEnd == document()->blockCount() - 1)
+            {
+                if (lineStart == 0)
+                {
+                    cursor.select(QTextCursor::Document);
+                }
+                else
+                {
+                    cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart - 1);
+                    cursor.movePosition(QTextCursor::EndOfLine);
+                    cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+                }
+            }
+            else
+            {
+                cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
+                cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart + 1);
+            }
+            cursor.insertText("");
+        }
+
         // Shortcut for toggle comments
         // Key_Question because it's Key_Slash after Shift
         if ((e->key() == Qt::Key_Slash || e->key() == Qt::Key_Question) && (e->modifiers() & Qt::ControlModifier))
