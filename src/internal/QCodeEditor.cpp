@@ -452,6 +452,55 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             return;
         }
 
+        // Shortcut for swap line up
+        if ((e->key() == Qt::Key_Up || e->key() == Qt::Key_Down) &&
+            e->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier))
+        {
+            auto cursor = textCursor();
+            auto lines = toPlainText().remove('\r').split('\n');
+            int selectionStart = cursor.selectionStart();
+            int selectionEnd = cursor.selectionEnd();
+            bool cursorAtEnd = cursor.position() == selectionEnd;
+            cursor.setPosition(selectionStart);
+            int lineStart = cursor.blockNumber();
+            cursor.setPosition(selectionEnd);
+            int lineEnd = cursor.blockNumber();
+
+            if (e->key() == Qt::Key_Up)
+            {
+                if (lineStart == 0)
+                    return;
+                selectionStart -= lines[lineStart - 1].length() + 1;
+                selectionEnd -= lines[lineStart - 1].length() + 1;
+                lines.move(lineStart - 1, lineEnd);
+            }
+
+            if (e->key() == Qt::Key_Down)
+            {
+                if (lineEnd == document()->blockCount() - 1)
+                    return;
+                selectionStart += lines[lineEnd + 1].length() + 1;
+                selectionEnd += lines[lineEnd + 1].length() + 1;
+                lines.move(lineEnd + 1, lineStart);
+            }
+
+            cursor.select(QTextCursor::Document);
+            cursor.insertText(lines.join('\n'));
+
+            if (cursorAtEnd)
+            {
+                cursor.setPosition(selectionStart);
+                cursor.setPosition(selectionEnd, QTextCursor::KeepAnchor);
+            }
+            else
+            {
+                cursor.setPosition(selectionEnd);
+                cursor.setPosition(selectionStart, QTextCursor::KeepAnchor);
+            }
+
+            setTextCursor(cursor);
+        }
+
         // Shortcut for toggle comments
         // Key_Question because it's Key_Slash after Shift
         if ((e->key() == Qt::Key_Slash || e->key() == Qt::Key_Question) && (e->modifiers() & Qt::ControlModifier))
