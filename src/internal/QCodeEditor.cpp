@@ -278,7 +278,7 @@ void QCodeEditor::toggleComment()
         QString comment = isCpp ? "//" : "#";
         if (!removeInEachLineOfSelection(QRegularExpression("^\\s*(" + comment + " ?)"), false))
         {
-            addInEachLineOfSelection(QRegularExpression("\\S"), comment + " ");
+            addInEachLineOfSelection(QRegularExpression("\\S|^\\s*$"), comment + " ");
         }
     }
 }
