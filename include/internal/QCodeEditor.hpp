@@ -242,6 +242,25 @@ class QCodeEditor : public QTextEdit
      */
     int getIndentationSpaces();
 
+    /**
+     * @brief Method for remove the first group of regex
+     * in each line of the selection.
+     * @param regex remove its first group
+     * @param force if true, remove regardless of whether
+     * all lines are begun with regex; if false remove
+     * only when all lines are begun with regex.
+     * @return if regex is removed
+     */
+    bool removeInEachLineOfSelection(const QRegularExpression &regex, bool force);
+
+    /**
+     * @brief Method for add the str at the begin of regex
+     * in each line of the selection.
+     * @param regex add at the begin of its match
+     * @param str string to add
+     */
+    void addInEachLineOfSelection(const QRegularExpression &regex, const QString &str);
+
     QStyleSyntaxHighlighter *m_highlighter;
     QSyntaxStyle *m_syntaxStyle;
     QLineNumberArea *m_lineNumberArea;

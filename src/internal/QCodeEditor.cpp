@@ -2,6 +2,7 @@
 #include <QCXXHighlighter>
 #include <QCodeEditor>
 #include <QLineNumberArea>
+#include <QPythonHighlighter>
 #include <QStyleSyntaxHighlighter>
 #include <QSyntaxStyle>
 
@@ -390,39 +391,9 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
     {
         if (e->key() == Qt::Key_Tab && e->modifiers() == Qt::NoModifier)
         {
-            auto cursor = textCursor();
-            if (cursor.hasSelection())
+            if (textCursor().hasSelection())
             {
-                auto lines = toPlainText().remove('\r').split('\n');
-                int selectionStart = cursor.selectionStart();
-                int selectionEnd = cursor.selectionEnd();
-                bool cursorAtEnd = cursor.position() == selectionEnd;
-                cursor.setPosition(selectionStart);
-                int lineStart = cursor.blockNumber();
-                cursor.setPosition(selectionEnd);
-                int lineEnd = cursor.blockNumber();
-                QString newText;
-                QTextStream str(&newText);
-                for (int i = lineStart; i <= lineEnd; ++i)
-                {
-                    auto line = lines[i];
-                    if (m_replaceTab)
-                        str << m_tabReplace;
-                    else
-                        str << "\t";
-                    str << line << endl;
-                }
-                cursor.movePosition(QTextCursor::Start);
-                cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
-                cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart + 1);
-                cursor.insertText(newText);
-                int pos = selectionStart + (m_replaceTab ? tabReplaceSize() : 1);
-                int pos2 = selectionEnd + (m_replaceTab ? tabReplaceSize() : 1) * (lineEnd - lineStart + 1);
-                if (!cursorAtEnd)
-                    qSwap(pos, pos2);
-                cursor.setPosition(pos);
-                cursor.setPosition(pos2, QTextCursor::KeepAnchor);
-                setTextCursor(cursor);
+                addInEachLineOfSelection(QRegularExpression("^"), m_replaceTab ? m_tabReplace : "\t");
                 return;
             }
             else if (m_replaceTab)
@@ -476,67 +447,8 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
         // Shortcut for moving line to left
         if (e->key() == Qt::Key_Backtab)
         {
-            auto cursor = textCursor();
-            auto lines = toPlainText().remove('\r').split('\n');
-            int selectionStart = cursor.selectionStart();
-            int selectionEnd = cursor.selectionEnd();
-            bool cursorAtEnd = cursor.position() == selectionEnd;
-            cursor.setPosition(selectionStart);
-            int lineStart = cursor.blockNumber();
-            cursor.setPosition(selectionEnd);
-            int lineEnd = cursor.blockNumber();
-            QString newText;
-            QTextStream str(&newText);
-            int deleteTotal = 0, deleteFirst = 0;
-            for (int i = lineStart; i <= lineEnd; ++i)
-            {
-                int len = 0;
-                auto line = lines[i];
-                if (!line.isEmpty())
-                {
-                    if (line.front() == '\t')
-                    {
-                        len = 1;
-                    }
-                    else
-                    {
-                        for (len = 0; len < line.length() && len < tabReplaceSize(); ++len)
-                        {
-                            if (!line[len].isSpace())
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (i == lineStart)
-                    deleteFirst = len;
-                deleteTotal += len;
-                str << line.mid(len) << endl;
-            }
-            cursor.movePosition(QTextCursor::Start);
-            cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
-            cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart + 1);
-            cursor.insertText(newText);
-            cursor.setPosition(qMax(0, selectionStart - deleteFirst));
-            if (cursor.blockNumber() < lineStart)
-            {
-                cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart - cursor.blockNumber());
-                cursor.movePosition(QTextCursor::StartOfLine);
-            }
-            int pos = cursor.position();
-            cursor.setPosition(selectionEnd - deleteTotal);
-            if (cursor.blockNumber() < lineEnd)
-            {
-                cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineEnd - cursor.blockNumber());
-                cursor.movePosition(QTextCursor::StartOfLine);
-            }
-            int pos2 = cursor.position();
-            if (!cursorAtEnd)
-                qSwap(pos, pos2);
-            cursor.setPosition(pos);
-            cursor.setPosition(pos2, QTextCursor::KeepAnchor);
-            setTextCursor(cursor);
+            removeInEachLineOfSelection(QRegularExpression("^(\t| {1," + QString::number(tabReplaceSize()) + "})"),
+                                        true);
             return;
         }
 
@@ -755,4 +667,105 @@ int QCodeEditor::getIndentationSpaces()
     }
 
     return indentationLevel;
+}
+
+bool QCodeEditor::removeInEachLineOfSelection(const QRegularExpression &regex, bool force)
+{
+    auto cursor = textCursor();
+    auto lines = toPlainText().remove('\r').split('\n');
+    int selectionStart = cursor.selectionStart();
+    int selectionEnd = cursor.selectionEnd();
+    bool cursorAtEnd = cursor.position() == selectionEnd;
+    cursor.setPosition(selectionStart);
+    int lineStart = cursor.blockNumber();
+    cursor.setPosition(selectionEnd);
+    int lineEnd = cursor.blockNumber();
+    QString newText;
+    QTextStream stream(&newText);
+    int deleteTotal = 0, deleteFirst = 0;
+    for (int i = lineStart; i <= lineEnd; ++i)
+    {
+        auto line = lines[i];
+        auto match = regex.match(line).captured(1);
+        int len = match.length();
+        if (len == 0 && !force)
+            return false;
+        if (i == lineStart)
+            deleteFirst = len;
+        deleteTotal += len;
+        stream << line.remove(line.indexOf(match), len);
+        if (i != lineEnd)
+            stream << endl;
+    }
+    cursor.movePosition(QTextCursor::Start);
+    cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
+    cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart);
+    cursor.movePosition(QTextCursor::EndOfLine, QTextCursor::KeepAnchor);
+    cursor.insertText(newText);
+    cursor.setPosition(qMax(0, selectionStart - deleteFirst));
+    if (cursor.blockNumber() < lineStart)
+    {
+        cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart - cursor.blockNumber());
+        cursor.movePosition(QTextCursor::StartOfLine);
+    }
+    int pos = cursor.position();
+    cursor.setPosition(selectionEnd - deleteTotal);
+    if (cursor.blockNumber() < lineEnd)
+    {
+        cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineEnd - cursor.blockNumber());
+        cursor.movePosition(QTextCursor::StartOfLine);
+    }
+    int pos2 = cursor.position();
+    if (cursorAtEnd)
+    {
+        cursor.setPosition(pos);
+        cursor.setPosition(pos2, QTextCursor::KeepAnchor);
+    }
+    else
+    {
+        cursor.setPosition(pos2);
+        cursor.setPosition(pos, QTextCursor::KeepAnchor);
+    }
+    setTextCursor(cursor);
+    return true;
+}
+
+void QCodeEditor::addInEachLineOfSelection(const QRegularExpression &regex, const QString &str)
+{
+    auto cursor = textCursor();
+    auto lines = toPlainText().remove('\r').split('\n');
+    int selectionStart = cursor.selectionStart();
+    int selectionEnd = cursor.selectionEnd();
+    bool cursorAtEnd = cursor.position() == selectionEnd;
+    cursor.setPosition(selectionStart);
+    int lineStart = cursor.blockNumber();
+    cursor.setPosition(selectionEnd);
+    int lineEnd = cursor.blockNumber();
+    QString newText;
+    QTextStream stream(&newText);
+    for (int i = lineStart; i <= lineEnd; ++i)
+    {
+        auto line = lines[i];
+        stream << line.insert(line.indexOf(regex), str);
+        if (i != lineEnd)
+            stream << endl;
+    }
+    cursor.movePosition(QTextCursor::Start);
+    cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
+    cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart);
+    cursor.movePosition(QTextCursor::EndOfLine, QTextCursor::KeepAnchor);
+    cursor.insertText(newText);
+    int pos = selectionStart + str.length();
+    int pos2 = selectionEnd + str.length() * (lineEnd - lineStart + 1);
+    if (cursorAtEnd)
+    {
+        cursor.setPosition(pos);
+        cursor.setPosition(pos2, QTextCursor::KeepAnchor);
+    }
+    else
+    {
+        cursor.setPosition(pos2);
+        cursor.setPosition(pos, QTextCursor::KeepAnchor);
+    }
+    setTextCursor(cursor);
 }
