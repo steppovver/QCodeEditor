@@ -157,6 +157,174 @@ void QCodeEditor::updateExtraSelection2()
     setExtraSelections(extra1 + extra2);
 }
 
+void QCodeEditor::indent()
+{
+    addInEachLineOfSelection(QRegularExpression("^"), m_replaceTab ? m_tabReplace : "\t");
+}
+
+void QCodeEditor::unindent()
+{
+    removeInEachLineOfSelection(QRegularExpression("^(\t| {1," + QString::number(tabReplaceSize()) + "})"), true);
+}
+
+void QCodeEditor::swapLineUp()
+{
+    auto cursor = textCursor();
+    auto lines = toPlainText().remove('\r').split('\n');
+    int selectionStart = cursor.selectionStart();
+    int selectionEnd = cursor.selectionEnd();
+    bool cursorAtEnd = cursor.position() == selectionEnd;
+    cursor.setPosition(selectionStart);
+    int lineStart = cursor.blockNumber();
+    cursor.setPosition(selectionEnd);
+    int lineEnd = cursor.blockNumber();
+
+    if (lineStart == 0)
+        return;
+    selectionStart -= lines[lineStart - 1].length() + 1;
+    selectionEnd -= lines[lineStart - 1].length() + 1;
+    lines.move(lineStart - 1, lineEnd);
+
+    cursor.select(QTextCursor::Document);
+    cursor.insertText(lines.join('\n'));
+
+    if (cursorAtEnd)
+    {
+        cursor.setPosition(selectionStart);
+        cursor.setPosition(selectionEnd, QTextCursor::KeepAnchor);
+    }
+    else
+    {
+        cursor.setPosition(selectionEnd);
+        cursor.setPosition(selectionStart, QTextCursor::KeepAnchor);
+    }
+
+    setTextCursor(cursor);
+}
+
+void QCodeEditor::swapLineDown()
+{
+    auto cursor = textCursor();
+    auto lines = toPlainText().remove('\r').split('\n');
+    int selectionStart = cursor.selectionStart();
+    int selectionEnd = cursor.selectionEnd();
+    bool cursorAtEnd = cursor.position() == selectionEnd;
+    cursor.setPosition(selectionStart);
+    int lineStart = cursor.blockNumber();
+    cursor.setPosition(selectionEnd);
+    int lineEnd = cursor.blockNumber();
+
+    if (lineEnd == document()->blockCount() - 1)
+        return;
+    selectionStart += lines[lineEnd + 1].length() + 1;
+    selectionEnd += lines[lineEnd + 1].length() + 1;
+    lines.move(lineEnd + 1, lineStart);
+
+    cursor.select(QTextCursor::Document);
+    cursor.insertText(lines.join('\n'));
+
+    if (cursorAtEnd)
+    {
+        cursor.setPosition(selectionStart);
+        cursor.setPosition(selectionEnd, QTextCursor::KeepAnchor);
+    }
+    else
+    {
+        cursor.setPosition(selectionEnd);
+        cursor.setPosition(selectionStart, QTextCursor::KeepAnchor);
+    }
+
+    setTextCursor(cursor);
+}
+
+void QCodeEditor::deleteLine()
+{
+    auto cursor = textCursor();
+    int selectionStart = cursor.selectionStart();
+    int selectionEnd = cursor.selectionEnd();
+    cursor.setPosition(selectionStart);
+    int lineStart = cursor.blockNumber();
+    cursor.setPosition(selectionEnd);
+    int lineEnd = cursor.blockNumber();
+    moveCursor(QTextCursor::MoveOperation::Up);
+    cursor.movePosition(QTextCursor::Start);
+    if (lineEnd == document()->blockCount() - 1)
+    {
+        if (lineStart == 0)
+        {
+            cursor.select(QTextCursor::Document);
+        }
+        else
+        {
+            cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart - 1);
+            cursor.movePosition(QTextCursor::EndOfLine);
+            cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+        }
+    }
+    else
+    {
+        cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
+        cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart + 1);
+    }
+    cursor.insertText("");
+}
+
+void QCodeEditor::toggleComment()
+{
+    bool isCpp = dynamic_cast<QCXXHighlighter *>(m_highlighter);
+    bool isPython = dynamic_cast<QPythonHighlighter *>(m_highlighter);
+    if (isCpp || isPython)
+    {
+        QString comment = isCpp ? "//" : "#";
+        if (!removeInEachLineOfSelection(QRegularExpression("^\\s*(" + comment + " ?)"), false))
+        {
+            addInEachLineOfSelection(QRegularExpression("\\S"), comment + " ");
+        }
+    }
+}
+
+void QCodeEditor::toggleBlockComment()
+{
+    bool isCpp = dynamic_cast<QCXXHighlighter *>(m_highlighter);
+    bool isPython = dynamic_cast<QPythonHighlighter *>(m_highlighter);
+    if (isCpp || isPython)
+    {
+        auto cursor = textCursor();
+        int startPos = cursor.selectionStart();
+        int endPos = cursor.selectionEnd();
+        bool cursorAtEnd = cursor.position() == endPos;
+        QString commentStart = isCpp ? "/*" : "\"\"\"";
+        QString commentEnd = isCpp ? "*/" : "\"\"\"";
+        auto text = cursor.selectedText();
+        int pos1, pos2;
+        if (text.indexOf(commentStart) == 0 && text.length() >= commentStart.length() + commentEnd.length() &&
+            text.lastIndexOf(commentEnd) + commentEnd.length() == text.length())
+        {
+            insertPlainText(
+                text.mid(commentStart.length(), text.length() - commentStart.length() - commentEnd.length()));
+            pos1 = startPos;
+            pos2 = endPos - commentStart.length() - commentEnd.length();
+        }
+        else
+        {
+            insertPlainText(commentStart + text + commentEnd);
+            pos1 = startPos;
+            pos2 = endPos + commentStart.length() + commentEnd.length();
+        }
+        if (cursorAtEnd)
+        {
+            cursor.setPosition(pos1);
+            cursor.setPosition(pos2, QTextCursor::KeepAnchor);
+        }
+        else
+        {
+            cursor.setPosition(pos2);
+            cursor.setPosition(pos1, QTextCursor::KeepAnchor);
+        }
+        setTextCursor(cursor);
+    }
+}
+
 void QCodeEditor::highlightParenthesis()
 {
     auto currentSymbol = charUnderCursor();
@@ -393,7 +561,7 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
         {
             if (textCursor().hasSelection())
             {
-                addInEachLineOfSelection(QRegularExpression("^"), m_replaceTab ? m_tabReplace : "\t");
+                indent();
                 return;
             }
             else if (m_replaceTab)
@@ -401,6 +569,12 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
                 insertPlainText(m_tabReplace);
                 return;
             }
+        }
+
+        if (e->key() == Qt::Key_Backtab)
+        {
+            unindent();
+            return;
         }
 
         // Auto indentation
@@ -442,154 +616,6 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             while (charsBack--)
                 moveCursor(QTextCursor::MoveOperation::Left);
             return;
-        }
-
-        // Shortcut for moving line to left
-        if (e->key() == Qt::Key_Backtab)
-        {
-            removeInEachLineOfSelection(QRegularExpression("^(\t| {1," + QString::number(tabReplaceSize()) + "})"),
-                                        true);
-            return;
-        }
-
-        // Shortcut for swap line up
-        if ((e->key() == Qt::Key_Up || e->key() == Qt::Key_Down) &&
-            e->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier))
-        {
-            auto cursor = textCursor();
-            auto lines = toPlainText().remove('\r').split('\n');
-            int selectionStart = cursor.selectionStart();
-            int selectionEnd = cursor.selectionEnd();
-            bool cursorAtEnd = cursor.position() == selectionEnd;
-            cursor.setPosition(selectionStart);
-            int lineStart = cursor.blockNumber();
-            cursor.setPosition(selectionEnd);
-            int lineEnd = cursor.blockNumber();
-
-            if (e->key() == Qt::Key_Up)
-            {
-                if (lineStart == 0)
-                    return;
-                selectionStart -= lines[lineStart - 1].length() + 1;
-                selectionEnd -= lines[lineStart - 1].length() + 1;
-                lines.move(lineStart - 1, lineEnd);
-            }
-
-            if (e->key() == Qt::Key_Down)
-            {
-                if (lineEnd == document()->blockCount() - 1)
-                    return;
-                selectionStart += lines[lineEnd + 1].length() + 1;
-                selectionEnd += lines[lineEnd + 1].length() + 1;
-                lines.move(lineEnd + 1, lineStart);
-            }
-
-            cursor.select(QTextCursor::Document);
-            cursor.insertText(lines.join('\n'));
-
-            if (cursorAtEnd)
-            {
-                cursor.setPosition(selectionStart);
-                cursor.setPosition(selectionEnd, QTextCursor::KeepAnchor);
-            }
-            else
-            {
-                cursor.setPosition(selectionEnd);
-                cursor.setPosition(selectionStart, QTextCursor::KeepAnchor);
-            }
-
-            setTextCursor(cursor);
-        }
-
-        // Shortcut for delete selected lines
-        if (e->key() == Qt::Key_K && e->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier))
-        {
-            auto cursor = textCursor();
-            int selectionStart = cursor.selectionStart();
-            int selectionEnd = cursor.selectionEnd();
-            cursor.setPosition(selectionStart);
-            int lineStart = cursor.blockNumber();
-            cursor.setPosition(selectionEnd);
-            int lineEnd = cursor.blockNumber();
-            moveCursor(QTextCursor::MoveOperation::Up);
-            cursor.movePosition(QTextCursor::Start);
-            if (lineEnd == document()->blockCount() - 1)
-            {
-                if (lineStart == 0)
-                {
-                    cursor.select(QTextCursor::Document);
-                }
-                else
-                {
-                    cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart - 1);
-                    cursor.movePosition(QTextCursor::EndOfLine);
-                    cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
-                }
-            }
-            else
-            {
-                cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
-                cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart + 1);
-            }
-            cursor.insertText("");
-        }
-
-        // Shortcut for toggle comments
-        // Key_Question because it's Key_Slash after Shift
-        if ((e->key() == Qt::Key_Slash || e->key() == Qt::Key_Question) && (e->modifiers() & Qt::ControlModifier))
-        {
-            bool isCpp = dynamic_cast<QCXXHighlighter *>(m_highlighter);
-            bool isPython = dynamic_cast<QPythonHighlighter *>(m_highlighter);
-            if (isCpp || isPython)
-            {
-                if (e->modifiers() == Qt::ControlModifier) // single-line comments
-                {
-                    QString comment = isCpp ? "//" : "#";
-                    if (!removeInEachLineOfSelection(QRegularExpression("^\\s*(" + comment + " ?)"), false))
-                    {
-                        addInEachLineOfSelection(QRegularExpression("\\S"), comment + " ");
-                    }
-                    return;
-                }
-                if (e->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) // multi-line comments
-                {
-                    auto cursor = textCursor();
-                    int startPos = cursor.selectionStart();
-                    int endPos = cursor.selectionEnd();
-                    bool cursorAtEnd = cursor.position() == endPos;
-                    QString commentStart = isCpp ? "/*" : "\"\"\"";
-                    QString commentEnd = isCpp ? "*/" : "\"\"\"";
-                    auto text = cursor.selectedText();
-                    int pos1, pos2;
-                    if (text.indexOf(commentStart) == 0 &&
-                        text.length() >= commentStart.length() + commentEnd.length() &&
-                        text.lastIndexOf(commentEnd) + commentEnd.length() == text.length())
-                    {
-                        insertPlainText(text.mid(commentStart.length(),
-                                                 text.length() - commentStart.length() - commentEnd.length()));
-                        pos1 = startPos;
-                        pos2 = endPos - commentStart.length() - commentEnd.length();
-                    }
-                    else
-                    {
-                        insertPlainText(commentStart + text + commentEnd);
-                        pos1 = startPos;
-                        pos2 = endPos + commentStart.length() + commentEnd.length();
-                    }
-                    if (cursorAtEnd)
-                    {
-                        cursor.setPosition(pos1);
-                        cursor.setPosition(pos2, QTextCursor::KeepAnchor);
-                    }
-                    else
-                    {
-                        cursor.setPosition(pos2);
-                        cursor.setPosition(pos1, QTextCursor::KeepAnchor);
-                    }
-                    setTextCursor(cursor);
-                    return;
-                }
-            }
         }
 
         if (m_autoParentheses)

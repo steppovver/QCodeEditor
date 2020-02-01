@@ -141,6 +141,42 @@ class QCodeEditor : public QTextEdit
      */
     void updateStyle();
 
+    /**
+     * @brief Slot, that indent the selected lines.
+     */
+    void indent();
+
+    /**
+     * @brief Slot, that unindent the selected lines.
+     */
+    void unindent();
+
+    /**
+     * @brief Slot, that swap the selected lines up.
+     */
+    void swapLineUp();
+
+    /**
+     * @brief Slot, that swap the selected lines down.
+     */
+    void swapLineDown();
+
+    /**
+     * @brief Slot, that delete the selected lines.
+     */
+    void deleteLine();
+
+    /**
+     * @brief Slot, that toggle single line comment of the
+     * selected lines.
+     */
+    void toggleComment();
+
+    /**
+     * @brief Slot, that toggle block comment of the selection.
+     */
+    void toggleBlockComment();
+
   protected:
     /**
      * @brief Method, that's called on any text insertion of
