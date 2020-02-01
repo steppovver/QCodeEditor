@@ -618,6 +618,18 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             return;
         }
 
+        // Auto-indent for single "{" without "}"
+        if (m_autoIndentation && (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter) &&
+            charUnderCursor(-1) == '{')
+        {
+            insertPlainText("\n");
+            if (m_replaceTab)
+                insertPlainText(QString(indentationLevel + defaultIndent, ' '));
+            else
+                insertPlainText(QString(tabCounts + 1, '\t'));
+            return;
+        }
+
         if (m_autoParentheses)
         {
             for (auto &&el : parentheses)
