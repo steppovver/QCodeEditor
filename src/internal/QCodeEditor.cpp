@@ -540,6 +540,38 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             return;
         }
 
+        if (m_autoParentheses)
+        {
+            for (auto &&el : parentheses)
+            {
+                // Add parentheses for selection
+                if (el.first == e->text())
+                {
+                    auto cursor = textCursor();
+                    if (cursor.hasSelection())
+                    {
+                        int startPos = cursor.selectionStart();
+                        int endPos = cursor.selectionEnd();
+                        bool cursorAtEnd = cursor.position() == endPos;
+                        auto text = el.first + cursor.selectedText() + el.second;
+                        insertPlainText(text);
+                        if (cursorAtEnd)
+                        {
+                            cursor.setPosition(startPos + 1);
+                            cursor.setPosition(endPos + 1, QTextCursor::KeepAnchor);
+                        }
+                        else
+                        {
+                            cursor.setPosition(endPos + 1);
+                            cursor.setPosition(startPos + 1, QTextCursor::KeepAnchor);
+                        }
+                        setTextCursor(cursor);
+                        return;
+                    }
+                }
+            }
+        }
+
         QTextEdit::keyPressEvent(e);
 
         if (m_autoIndentation && (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter))
