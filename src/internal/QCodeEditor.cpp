@@ -452,6 +452,64 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             return;
         }
 
+        // Shortcut for toggle comments
+        // Key_Question because it's Key_Slash after Shift
+        if ((e->key() == Qt::Key_Slash || e->key() == Qt::Key_Question) && (e->modifiers() & Qt::ControlModifier))
+        {
+            bool isCpp = dynamic_cast<QCXXHighlighter *>(m_highlighter);
+            bool isPython = dynamic_cast<QPythonHighlighter *>(m_highlighter);
+            if (isCpp || isPython)
+            {
+                if (e->modifiers() == Qt::ControlModifier) // single-line comments
+                {
+                    QString comment = isCpp ? "//" : "#";
+                    if (!removeInEachLineOfSelection(QRegularExpression("^\\s*(" + comment + " ?)"), false))
+                    {
+                        addInEachLineOfSelection(QRegularExpression("\\S"), comment + " ");
+                    }
+                    return;
+                }
+                if (e->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) // multi-line comments
+                {
+                    auto cursor = textCursor();
+                    int startPos = cursor.selectionStart();
+                    int endPos = cursor.selectionEnd();
+                    bool cursorAtEnd = cursor.position() == endPos;
+                    QString commentStart = isCpp ? "/*" : "\"\"\"";
+                    QString commentEnd = isCpp ? "*/" : "\"\"\"";
+                    auto text = cursor.selectedText();
+                    int pos1, pos2;
+                    if (text.indexOf(commentStart) == 0 &&
+                        text.length() >= commentStart.length() + commentEnd.length() &&
+                        text.lastIndexOf(commentEnd) + commentEnd.length() == text.length())
+                    {
+                        insertPlainText(text.mid(commentStart.length(),
+                                                 text.length() - commentStart.length() - commentEnd.length()));
+                        pos1 = startPos;
+                        pos2 = endPos - commentStart.length() - commentEnd.length();
+                    }
+                    else
+                    {
+                        insertPlainText(commentStart + text + commentEnd);
+                        pos1 = startPos;
+                        pos2 = endPos + commentStart.length() + commentEnd.length();
+                    }
+                    if (cursorAtEnd)
+                    {
+                        cursor.setPosition(pos1);
+                        cursor.setPosition(pos2, QTextCursor::KeepAnchor);
+                    }
+                    else
+                    {
+                        cursor.setPosition(pos2);
+                        cursor.setPosition(pos1, QTextCursor::KeepAnchor);
+                    }
+                    setTextCursor(cursor);
+                    return;
+                }
+            }
+        }
+
         if (m_autoParentheses)
         {
             for (auto &&el : parentheses)
