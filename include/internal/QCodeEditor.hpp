@@ -272,13 +272,6 @@ class QCodeEditor : public QTextEdit
     void highlightOccurrences();
 
     /**
-     * @brief Method for getting number of indentation
-     * spaces in current line. Tabs will be treated
-     * as `tabWidth / spaceWidth`
-     */
-    int getIndentationSpaces();
-
-    /**
      * @brief Method for remove the first group of regex
      * in each line of the selection.
      * @param regex remove its first group

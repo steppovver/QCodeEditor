@@ -547,12 +547,6 @@ void QCodeEditor::proceedCompleterEnd(QKeyEvent *e)
 
 void QCodeEditor::keyPressEvent(QKeyEvent *e)
 {
-#if QT_VERSION >= 0x050A00
-    const int defaultIndent = tabStopDistance() / fontMetrics().averageCharWidth();
-#else
-    const int defaultIndent = tabStopWidth() / fontMetrics().averageCharWidth();
-#endif
-
     auto completerSkip = proceedCompleterBegin(e);
 
     if (!completerSkip)
@@ -578,13 +572,10 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
         }
 
         // Auto indentation
-        int indentationLevel = getIndentationSpaces();
 
-#if QT_VERSION >= 0x050A00
-        int tabCounts = indentationLevel * fontMetrics().averageCharWidth() / tabStopDistance();
-#else
-        int tabCounts = indentationLevel * fontMetrics().averageCharWidth() / tabStopWidth();
-#endif
+        QString indentationSpaces = QRegularExpression("^\\s*")
+                                        .match(document()->findBlockByNumber(textCursor().blockNumber()).text())
+                                        .captured();
 
         // Have Qt Edior like behaviour, if {|} and enter is pressed indent the two
         // parenthesis
@@ -595,23 +586,15 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             insertPlainText("\n");
 
             if (m_replaceTab)
-                insertPlainText(QString(indentationLevel + defaultIndent, ' '));
+                insertPlainText(indentationSpaces + m_tabReplace);
             else
-                insertPlainText(QString(tabCounts + 1, '\t'));
+                insertPlainText(indentationSpaces + '\t');
 
             insertPlainText("\n");
             charsBack++;
 
-            if (m_replaceTab)
-            {
-                insertPlainText(QString(indentationLevel, ' '));
-                charsBack += indentationLevel;
-            }
-            else
-            {
-                insertPlainText(QString(tabCounts, '\t'));
-                charsBack += tabCounts;
-            }
+            insertPlainText(indentationSpaces);
+            charsBack += indentationSpaces.length();
 
             while (charsBack--)
                 moveCursor(QTextCursor::MoveOperation::Left);
@@ -624,9 +607,9 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
         {
             insertPlainText("\n");
             if (m_replaceTab)
-                insertPlainText(QString(indentationLevel + defaultIndent, ' '));
+                insertPlainText(indentationSpaces + m_tabReplace);
             else
-                insertPlainText(QString(tabCounts + 1, '\t'));
+                insertPlainText(indentationSpaces + '\t');
             return;
         }
 
@@ -666,10 +649,7 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
 
         if (m_autoIndentation && (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter))
         {
-            if (m_replaceTab)
-                insertPlainText(QString(indentationLevel, ' '));
-            else
-                insertPlainText(QString(tabCounts, '\t'));
+            insertPlainText(indentationSpaces);
         }
 
         if (m_autoParentheses)
@@ -820,31 +800,6 @@ QString QCodeEditor::wordUnderCursor() const
 void QCodeEditor::insertFromMimeData(const QMimeData *source)
 {
     insertPlainText(source->text());
-}
-
-int QCodeEditor::getIndentationSpaces()
-{
-    auto blockText = textCursor().block().text();
-
-    int indentationLevel = 0;
-
-    for (auto i = 0; i < blockText.size() && QString("\t ").contains(blockText[i]); ++i)
-    {
-        if (blockText[i] == ' ')
-        {
-            indentationLevel++;
-        }
-        else
-        {
-#if QT_VERSION >= 0x050A00
-            indentationLevel += tabStopDistance() / fontMetrics().averageCharWidth();
-#else
-            indentationLevel += tabStopWidth() / fontMetrics().averageCharWidth();
-#endif
-        }
-    }
-
-    return indentationLevel;
 }
 
 bool QCodeEditor::removeInEachLineOfSelection(const QRegularExpression &regex, bool force)
