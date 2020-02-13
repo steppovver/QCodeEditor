@@ -25,7 +25,7 @@ static QVector<QPair<QString, QString>> parentheses = {{"(", ")"}, {"{", "}"}, {
 QCodeEditor::QCodeEditor(QWidget *widget)
     : QTextEdit(widget), m_highlighter(nullptr), m_syntaxStyle(nullptr), m_lineNumberArea(new QLineNumberArea(this)),
       m_completer(nullptr), m_autoIndentation(true), m_autoParentheses(true), m_replaceTab(true),
-      m_tabReplace(QString(4, ' ')), extra1(), extra2()
+      m_autoRemoveParentheses(true), m_tabReplace(QString(4, ' ')), extra1(), extra2()
 {
     initFont();
     performConnections();
@@ -613,6 +613,24 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             return;
         }
 
+        if (m_autoRemoveParentheses && e->key() == Qt::Key_Backspace && e->modifiers() == Qt::NoModifier &&
+            !textCursor().hasSelection())
+        {
+            auto pre = charUnderCursor(-1);
+            auto nxt = charUnderCursor();
+            for (auto p : parentheses)
+            {
+                if (p.first == pre && p.second == nxt)
+                {
+                    auto cursor = textCursor();
+                    cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor);
+                    cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+                    cursor.insertText("");
+                    return;
+                }
+            }
+        }
+
         if (m_autoParentheses)
         {
             for (auto &&el : parentheses)
@@ -687,6 +705,11 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
 void QCodeEditor::setAutoIndentation(bool enabled)
 {
     m_autoIndentation = enabled;
+}
+
+void QCodeEditor::setAutoRemoveParentheses(bool enabled)
+{
+    m_autoRemoveParentheses = enabled;
 }
 
 bool QCodeEditor::autoIndentation() const

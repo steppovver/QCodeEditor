@@ -89,6 +89,11 @@ class QCodeEditor : public QTextEdit
     void setAutoIndentation(bool enabled);
 
     /**
+     * @brief Method for setting auto remove parenthesis enabled.
+     */
+    void setAutoRemoveParentheses(bool enabled);
+
+    /**
      * @brief Method for getting is auto indentation enabled.
      * Default: true
      */
@@ -298,6 +303,7 @@ class QCodeEditor : public QTextEdit
     bool m_autoIndentation;
     bool m_autoParentheses;
     bool m_replaceTab;
+    bool m_autoRemoveParentheses;
     QString m_tabReplace;
 
     QList<QTextEdit::ExtraSelection> extra1, extra2;
