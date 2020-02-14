@@ -582,22 +582,11 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
         if (m_autoIndentation && (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter) &&
             charUnderCursor() == '}' && charUnderCursor(-1) == '{')
         {
-            int charsBack = 0;
-            insertPlainText("\n");
+            insertPlainText("\n" + indentationSpaces + (m_replaceTab ? m_tabReplace : "\t") + "\n" + indentationSpaces);
 
-            if (m_replaceTab)
-                insertPlainText(indentationSpaces + m_tabReplace);
-            else
-                insertPlainText(indentationSpaces + '\t');
-
-            insertPlainText("\n");
-            charsBack++;
-
-            insertPlainText(indentationSpaces);
-            charsBack += indentationSpaces.length();
-
-            while (charsBack--)
+            for (int i = 0; i <= indentationSpaces.length(); ++i)
                 moveCursor(QTextCursor::MoveOperation::Left);
+
             return;
         }
 
@@ -605,11 +594,7 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
         if (m_autoIndentation && (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter) &&
             charUnderCursor(-1) == '{')
         {
-            insertPlainText("\n");
-            if (m_replaceTab)
-                insertPlainText(indentationSpaces + m_tabReplace);
-            else
-                insertPlainText(indentationSpaces + '\t');
+            insertPlainText("\n" + indentationSpaces + (m_replaceTab ? m_tabReplace : "\t"));
             return;
         }
 
