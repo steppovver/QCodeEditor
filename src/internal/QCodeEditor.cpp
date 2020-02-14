@@ -739,9 +739,8 @@ bool QCodeEditor::tabReplace() const
 
 void QCodeEditor::setTabReplaceSize(int val)
 {
-    m_tabReplace.clear();
-
     m_tabReplace.fill(' ', val);
+    setTabStopDistance(QFontMetrics(font()).horizontalAdvance(QString(val * 1000, ' ')) / 1000.0);
 }
 
 int QCodeEditor::tabReplaceSize() const
