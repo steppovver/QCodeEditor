@@ -648,12 +648,33 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             }
         }
 
-        QTextEdit::keyPressEvent(e);
-
-        if (m_autoIndentation && (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter))
+        if ((e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter) && !(e->modifiers() & Qt::AltModifier))
         {
-            insertPlainText(indentationSpaces);
+            if (e->modifiers() == Qt::ControlModifier)
+            {
+                moveCursor(QTextCursor::EndOfLine);
+            }
+            else if (e->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier))
+            {
+                moveCursor(QTextCursor::StartOfLine);
+                QString insertText = "\n";
+                int blockNumber = textCursor().blockNumber();
+                if (blockNumber > 0)
+                {
+                    insertText.prepend(QRegularExpression("^\\s*")
+                                           .match(document()->findBlockByNumber(blockNumber - 1).text())
+                                           .captured());
+                }
+                insertPlainText(insertText);
+                moveCursor(QTextCursor::Up);
+                moveCursor(QTextCursor::EndOfLine);
+                return;
+            }
+            insertPlainText("\n" + indentationSpaces);
+            return;
         }
+
+        QTextEdit::keyPressEvent(e);
 
         if (m_autoParentheses)
         {
