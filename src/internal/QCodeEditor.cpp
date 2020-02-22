@@ -1,6 +1,7 @@
 // QCodeEditor
 #include <QCXXHighlighter>
 #include <QCodeEditor>
+#include <QJavaHighlighter>
 #include <QLineNumberArea>
 #include <QPythonHighlighter>
 #include <QStyleSyntaxHighlighter>
@@ -272,10 +273,11 @@ void QCodeEditor::deleteLine()
 void QCodeEditor::toggleComment()
 {
     bool isCpp = dynamic_cast<QCXXHighlighter *>(m_highlighter);
+    bool isJava = dynamic_cast<QJavaHighlighter *>(m_highlighter);
     bool isPython = dynamic_cast<QPythonHighlighter *>(m_highlighter);
-    if (isCpp || isPython)
+    if (isCpp || isJava || isPython)
     {
-        QString comment = isCpp ? "//" : "#";
+        QString comment = isPython ? "#" : "//";
         if (!removeInEachLineOfSelection(QRegularExpression("^\\s*(" + comment + " ?)"), false))
         {
             addInEachLineOfSelection(QRegularExpression("\\S|^\\s*$"), comment + " ");
