@@ -567,7 +567,7 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             }
         }
 
-        if (e->key() == Qt::Key_Backtab)
+        if (e->key() == Qt::Key_Backtab && e->modifiers() == Qt::ShiftModifier)
         {
             unindent();
             return;
