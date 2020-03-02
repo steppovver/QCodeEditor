@@ -288,15 +288,16 @@ void QCodeEditor::toggleComment()
 void QCodeEditor::toggleBlockComment()
 {
     bool isCpp = dynamic_cast<QCXXHighlighter *>(m_highlighter);
+    bool isJava = dynamic_cast<QJavaHighlighter *>(m_highlighter);
     bool isPython = dynamic_cast<QPythonHighlighter *>(m_highlighter);
-    if (isCpp || isPython)
+    if (isCpp || isJava || isPython)
     {
         auto cursor = textCursor();
         int startPos = cursor.selectionStart();
         int endPos = cursor.selectionEnd();
         bool cursorAtEnd = cursor.position() == endPos;
-        QString commentStart = isCpp ? "/*" : "\"\"\"";
-        QString commentEnd = isCpp ? "*/" : "\"\"\"";
+        QString commentStart = isPython ? "\"\"\"" : "/*";
+        QString commentEnd = isPython ? "\"\"\"" : "*/";
         auto text = cursor.selectedText();
         int pos1, pos2;
         if (text.indexOf(commentStart) == 0 && text.length() >= commentStart.length() + commentEnd.length() &&
