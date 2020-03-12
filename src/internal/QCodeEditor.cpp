@@ -574,6 +574,12 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             return;
         }
 
+        if (e->key() == Qt::Key_Delete && e->modifiers() == Qt::ShiftModifier)
+        {
+            deleteLine();
+            return;
+        }
+
         // Auto indentation
 
         QString indentationSpaces = QRegularExpression("^\\s*")
