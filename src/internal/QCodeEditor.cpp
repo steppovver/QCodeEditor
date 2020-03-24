@@ -247,7 +247,7 @@ void QCodeEditor::deleteLine()
     int lineStart = cursor.blockNumber();
     cursor.setPosition(selectionEnd);
     int lineEnd = cursor.blockNumber();
-    moveCursor(QTextCursor::MoveOperation::Up);
+    moveCursor(QTextCursor::MoveOperation::PreviousBlock);
     cursor.movePosition(QTextCursor::Start);
     if (lineEnd == document()->blockCount() - 1)
     {
@@ -257,15 +257,15 @@ void QCodeEditor::deleteLine()
         }
         else
         {
-            cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart - 1);
-            cursor.movePosition(QTextCursor::EndOfLine);
+            cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, lineStart - 1);
+            cursor.movePosition(QTextCursor::EndOfBlock);
             cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
         }
     }
     else
     {
-        cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
-        cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart + 1);
+        cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, lineStart);
+        cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor, lineEnd - lineStart + 1);
     }
     cursor.insertText("");
 }
@@ -661,11 +661,11 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
         {
             if (e->modifiers() == Qt::ControlModifier)
             {
-                moveCursor(QTextCursor::EndOfLine);
+                moveCursor(QTextCursor::EndOfBlock);
             }
             else if (e->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier))
             {
-                moveCursor(QTextCursor::StartOfLine);
+                moveCursor(QTextCursor::StartOfBlock);
                 QString insertText = "\n";
                 int blockNumber = textCursor().blockNumber();
                 if (blockNumber > 0)
@@ -675,8 +675,8 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
                                            .captured());
                 }
                 insertPlainText(insertText);
-                moveCursor(QTextCursor::Up);
-                moveCursor(QTextCursor::EndOfLine);
+                moveCursor(QTextCursor::PreviousBlock);
+                moveCursor(QTextCursor::EndOfBlock);
                 return;
             }
             insertPlainText("\n" + indentationSpaces);
@@ -868,22 +868,22 @@ bool QCodeEditor::removeInEachLineOfSelection(const QRegularExpression &regex, b
             stream << endl;
     }
     cursor.movePosition(QTextCursor::Start);
-    cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
-    cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart);
-    cursor.movePosition(QTextCursor::EndOfLine, QTextCursor::KeepAnchor);
+    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, lineStart);
+    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor, lineEnd - lineStart);
+    cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
     cursor.insertText(newText);
     cursor.setPosition(qMax(0, selectionStart - deleteFirst));
     if (cursor.blockNumber() < lineStart)
     {
-        cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart - cursor.blockNumber());
-        cursor.movePosition(QTextCursor::StartOfLine);
+        cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, lineStart - cursor.blockNumber());
+        cursor.movePosition(QTextCursor::StartOfBlock);
     }
     int pos = cursor.position();
     cursor.setPosition(selectionEnd - deleteTotal);
     if (cursor.blockNumber() < lineEnd)
     {
-        cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineEnd - cursor.blockNumber());
-        cursor.movePosition(QTextCursor::StartOfLine);
+        cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, lineEnd - cursor.blockNumber());
+        cursor.movePosition(QTextCursor::StartOfBlock);
     }
     int pos2 = cursor.position();
     if (cursorAtEnd)
@@ -921,9 +921,9 @@ void QCodeEditor::addInEachLineOfSelection(const QRegularExpression &regex, cons
             stream << endl;
     }
     cursor.movePosition(QTextCursor::Start);
-    cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineStart);
-    cursor.movePosition(QTextCursor::Down, QTextCursor::KeepAnchor, lineEnd - lineStart);
-    cursor.movePosition(QTextCursor::EndOfLine, QTextCursor::KeepAnchor);
+    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, lineStart);
+    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor, lineEnd - lineStart);
+    cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
     cursor.insertText(newText);
     int pos = selectionStart + str.length();
     int pos2 = selectionEnd + str.length() * (lineEnd - lineStart + 1);
