@@ -683,8 +683,6 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             return;
         }
 
-        QTextEdit::keyPressEvent(e);
-
         if (m_autoParentheses)
         {
             for (auto &&el : parentheses)
@@ -696,20 +694,21 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
 
                     if (symbol == el.second)
                     {
-                        textCursor().deletePreviousChar();
                         moveCursor(QTextCursor::MoveOperation::Right);
-                        break;
+                        return;
                     }
                 }
                 // Inserting closed brace
                 if (el.first == e->text())
                 {
-                    insertPlainText(el.second);
+                    insertPlainText(el.first + el.second);
                     moveCursor(QTextCursor::MoveOperation::Left);
-                    break;
+                    return;
                 }
             }
         }
+
+        QTextEdit::keyPressEvent(e);
     }
 
     proceedCompleterEnd(e);
