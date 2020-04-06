@@ -689,14 +689,6 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
         {
             for (auto &&el : parentheses)
             {
-                // Inserting closed brace
-                if (el.first == e->text())
-                {
-                    insertPlainText(el.second);
-                    moveCursor(QTextCursor::MoveOperation::Left);
-                    break;
-                }
-
                 // If it's close brace - check parentheses
                 if (el.second == e->text())
                 {
@@ -706,8 +698,14 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
                     {
                         textCursor().deletePreviousChar();
                         moveCursor(QTextCursor::MoveOperation::Right);
+                        break;
                     }
-
+                }
+                // Inserting closed brace
+                if (el.first == e->text())
+                {
+                    insertPlainText(el.second);
+                    moveCursor(QTextCursor::MoveOperation::Left);
                     break;
                 }
             }
