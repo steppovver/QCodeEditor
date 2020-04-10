@@ -1,4 +1,7 @@
 # Qt Code Editor Widget
+
+[![GitHub Workflow Status](https://github.com/cpeditor/QCodeEditor/workflows/CI:%20Build%20Test/badge.svg?event=push)](https://github.com/cpeditor/QCodeEditor/actions?query=event%3Apush)
+
 It's a widget for editing/viewing code.
 
 This project uses a resource named `qcodeeditor_resources.qrc`. The main application
