@@ -866,7 +866,7 @@ void QCodeEditor::squiggle(SeverityLevel level, int lineNumber, int startSquiggl
     auto cursor = textCursor();         // use to underline
 
     cursor.movePosition(QTextCursor::Start);
-    cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineNumber - 1);
+    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, lineNumber - 1);
     cursor.movePosition(QTextCursor::StartOfBlock);
     cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, startSquiggle);
     int i = startSquiggle;
@@ -913,7 +913,7 @@ void QCodeEditor::eraseSquiggle(int lineNumber)
         auto originalCursor = textCursor();
 
         cursor.movePosition(QTextCursor::Start);
-        cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, lineNumber - 1);
+        cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, lineNumber - 1);
         cursor.movePosition(QTextCursor::StartOfBlock);
         cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, iter->m_startPos);
         int i = iter->m_stopPos;
