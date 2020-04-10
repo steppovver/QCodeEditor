@@ -1,5 +1,3 @@
-#include <utility>
-
 #pragma once
 
 // Qt
@@ -25,9 +23,10 @@ class QCodeEditor : public QTextEdit
     /**
      * @brief The SeverityLevel enum
      */
-    enum class SeverityLevel{
-        Error, // red
-        Warning, // green
+    enum class SeverityLevel
+    {
+        Error,      // red
+        Warning,    // green
         Information // yellow or grey
     };
 
@@ -341,13 +340,12 @@ class QCodeEditor : public QTextEdit
      */
     struct SquiggleInformation
     {
-        SquiggleInformation(int start, int stop, int num, QString text) :
-            m_startPos(start),
-            m_stopPos(stop),
-            m_tooltipText(std::move(text)),
-            m_lineNumber(num) {}
+        SquiggleInformation(int start, int stop, int num, QString text)
+            : m_startPos(start), m_stopPos(stop), m_tooltipText(std::move(text)), m_lineNumber(num)
+        {
+        }
 
-        bool operator<(SquiggleInformation const & other) const
+        bool operator<(SquiggleInformation const &other) const
         {
             return m_lineNumber < other.m_lineNumber;
         }
@@ -372,5 +370,4 @@ class QCodeEditor : public QTextEdit
     QList<QTextEdit::ExtraSelection> extra1, extra2;
 
     std::multiset<SquiggleInformation> m_squiggler;
-
 };

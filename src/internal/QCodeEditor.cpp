@@ -1,5 +1,3 @@
-#include <utility>
-
 // QCodeEditor
 #include <QCXXHighlighter>
 #include <QCodeEditor>
@@ -396,7 +394,7 @@ void QCodeEditor::highlightParenthesis()
             selection.cursor = textCursor();
             selection.cursor.clearSelection();
             selection.cursor.movePosition(directionEnum, QTextCursor::MoveMode::MoveAnchor,
-                                          std::abs(textCursor().position() - position));
+                                          qAbs(textCursor().position() - position));
 
             selection.cursor.movePosition(QTextCursor::MoveOperation::Right, QTextCursor::MoveMode::KeepAnchor, 1);
 
@@ -859,7 +857,7 @@ QCompleter *QCodeEditor::completer() const
 void QCodeEditor::squiggle(SeverityLevel level, int lineNumber, int startSquiggle, int stopSquiggle,
                            QString tooltipMessage)
 {
-    SquiggleInformation info(startSquiggle, stopSquiggle, lineNumber, std::move(tooltipMessage));
+    SquiggleInformation info(startSquiggle, stopSquiggle, lineNumber, tooltipMessage);
     m_squiggler.insert(info);
 
     auto originalCursor = textCursor(); // use to restore to original position
