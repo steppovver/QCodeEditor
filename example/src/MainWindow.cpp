@@ -178,6 +178,18 @@ void MainWindow::setupWidgets()
     m_codeEditor->setCompleter  (m_completers[0].second);
     m_codeEditor->setHighlighter(m_highlighters[0].second);
 
+    m_codeEditor->squiggle(QCodeEditor::SeverityLevel::Information, 5, 8, 9, "unused variable");
+    m_codeEditor->squiggle(QCodeEditor::SeverityLevel::Error, 5, 17, 18, "Expected a semicolon ;");
+
+    m_codeEditor->squiggle(QCodeEditor::SeverityLevel::Error, 7, 10, 27, "Large error");
+    m_codeEditor->squiggle(QCodeEditor::SeverityLevel::Error, 7, 30, 35, "Large error 2");
+
+    m_codeEditor->eraseSquiggle(5); // removes the squiggle from line 5 completely.
+
+    m_codeEditor->squiggle(QCodeEditor::SeverityLevel::Error, 5, 6, 12, "Bad thing happens");
+
+    m_codeEditor->clearSquiggle();
+
     QStringList list;
     // Code samples
     for (auto&& el : m_codeSamples)

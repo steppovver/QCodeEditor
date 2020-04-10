@@ -5,10 +5,11 @@ set(CMAKE_CXX_STANDARD 11)
 
 option(BUILD_EXAMPLE "Example building required" Off)
 
-if (${BUILD_EXAMPLE})
-    message(STATUS "QCodeEditor example will be built.")
-    add_subdirectory(example)
-endif()
+#if (${BUILD_EXAMPLE})
+#    message(STATUS "QCodeEditor example will be built.")
+#    add_subdirectory(example)
+#endif()
+add_subdirectory(example)
 
 set(RESOURCES_FILE
     resources/qcodeeditor_resources.qrc

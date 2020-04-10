@@ -1,7 +1,12 @@
+#include <utility>
+
 #pragma once
 
 // Qt
 #include <QTextEdit> // Required for inheritance
+
+// Standard
+#include <set>
 
 class QCompleter;
 class QLineNumberArea;
@@ -17,6 +22,15 @@ class QCodeEditor : public QTextEdit
     Q_OBJECT
 
   public:
+    /**
+     * @brief The SeverityLevel enum
+     */
+    enum class SeverityLevel{
+        Error, // red
+        Warning, // green
+        Information // yellow or grey
+    };
+
     /**
      * @brief Constructor.
      * @param widget Pointer to parent widget.
@@ -110,6 +124,28 @@ class QCodeEditor : public QTextEdit
      * @return Pointer to completer.
      */
     QCompleter *completer() const;
+
+    /**
+     * @brief Method to put a squiggly line (underline) for error/warning/information in code editor.
+     * @param level The severity of the squiggle, determines the color of squiggle.
+     * @param lineNumber The line number to squiggle.
+     * @param startSquiggle The start position in the line where squiggly line begins.
+     * @param stopSquiggle The stop position in the line where squiggly line stops.
+     * @param tooltipMessage The tooltip message to show when the squiggle is under cursor.
+     */
+    void squiggle(SeverityLevel level, int lineNumber, int startSquiggle, int stopSquiggle, QString tooltipMessage);
+
+    /**
+     * @brief eraseSquiggle, Undo what was done by the function call `squiggle`.
+     * @note This function will erase all squiggles from a line number.
+     * @param lineNumber The line number to undo squiggle and tooltip from.
+     */
+    void eraseSquiggle(int lineNumber);
+
+    /**
+     * @brief clearSquiggle, Clears complete squiggle from editor
+     */
+    void clearSquiggle();
 
   public Q_SLOTS:
 
@@ -221,6 +257,11 @@ class QCodeEditor : public QTextEdit
      */
     void focusInEvent(QFocusEvent *e) override;
 
+    /**
+     * @brief Method for tooltip generation
+     */
+    bool event(QEvent *e) override;
+
   private:
     /**
      * @brief Method for initializing default
@@ -295,6 +336,28 @@ class QCodeEditor : public QTextEdit
      */
     void addInEachLineOfSelection(const QRegularExpression &regex, const QString &str);
 
+    /**
+     * @brief The SquiggleInformation struct, Line number will be index of vector+1;
+     */
+    struct SquiggleInformation
+    {
+        SquiggleInformation(int start, int stop, int num, QString text) :
+            m_startPos(start),
+            m_stopPos(stop),
+            m_tooltipText(std::move(text)),
+            m_lineNumber(num) {}
+
+        bool operator<(SquiggleInformation const & other) const
+        {
+            return m_lineNumber < other.m_lineNumber;
+        }
+
+        int m_startPos;
+        int m_stopPos;
+        QString m_tooltipText;
+        int m_lineNumber;
+    };
+
     QStyleSyntaxHighlighter *m_highlighter;
     QSyntaxStyle *m_syntaxStyle;
     QLineNumberArea *m_lineNumberArea;
@@ -307,4 +370,7 @@ class QCodeEditor : public QTextEdit
     QString m_tabReplace;
 
     QList<QTextEdit::ExtraSelection> extra1, extra2;
+
+    std::multiset<SquiggleInformation> m_squiggler;
+
 };
