@@ -25,9 +25,10 @@ class QCodeEditor : public QTextEdit
      */
     enum class SeverityLevel
     {
-        Error,      // red
-        Warning,    // green
-        Information // yellow or grey
+        Error,
+        Warning,
+        Information,
+        Hint
     };
 
     /**
@@ -132,7 +133,7 @@ class QCodeEditor : public QTextEdit
      * @param stopSquiggle The stop position in the line where squiggly line stops.
      * @param tooltipMessage The tooltip message to show when the squiggle is under cursor.
      */
-    void squiggle(SeverityLevel level, int lineNumber, int startSquiggle, int stopSquiggle, QString tooltipMessage);
+    void squiggle(SeverityLevel level, QPair<int,int>, QPair<int, int>, QString tooltipMessage);
 
     /**
      * @brief eraseSquiggle, Undo what was done by the function call `squiggle`.
@@ -340,20 +341,16 @@ class QCodeEditor : public QTextEdit
      */
     struct SquiggleInformation
     {
-        SquiggleInformation(int start, int stop, int num, QString text)
-            : m_startPos(start), m_stopPos(stop), m_tooltipText(std::move(text)), m_lineNumber(num)
+        SquiggleInformation(QPair<int, int> start, QPair<int, int> stop, QString text)
+            : m_startPos(start), m_stopPos(stop), m_tooltipText(std::move(text))
         {
         }
 
-        bool operator<(SquiggleInformation const &other) const
-        {
-            return m_lineNumber < other.m_lineNumber;
-        }
-
-        int m_startPos;
-        int m_stopPos;
+        QPair<int,int> m_startPos;
+        QPair<int,int> m_stopPos;
         QString m_tooltipText;
-        int m_lineNumber;
+        QTextCharFormat originalFormat;
+
     };
 
     QStyleSyntaxHighlighter *m_highlighter;
@@ -369,5 +366,5 @@ class QCodeEditor : public QTextEdit
 
     QList<QTextEdit::ExtraSelection> extra1, extra2;
 
-    std::multiset<SquiggleInformation> m_squiggler;
+    std::vector<SquiggleInformation> m_squiggler;
 };

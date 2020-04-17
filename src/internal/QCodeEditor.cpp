@@ -1,3 +1,5 @@
+#include <utility>
+
 // QCodeEditor
 #include <QCXXHighlighter>
 #include <QCodeEditor>
@@ -804,32 +806,25 @@ bool QCodeEditor::event(QEvent *event)
 
         auto lineNumber = cursor.blockNumber() + 1;
 
-        SquiggleInformation dummy(0, 0, lineNumber, "");
-        auto iter = m_squiggler.find(dummy);
+        QTextCursor copyCursor(cursor);
+        copyCursor.movePosition(QTextCursor::StartOfBlock);
 
-        if (iter != m_squiggler.end())
+        auto blockPositionStart = cursor.positionInBlock() - copyCursor.positionInBlock();
+        QPair<int, int> positionOfTooltip{lineNumber, blockPositionStart};
+        qDebug() << positionOfTooltip;
+
+        QString text;
+        for(auto const& e : m_squiggler)
         {
-            QString text;
-            while (iter != m_squiggler.end() && iter->m_lineNumber == lineNumber)
+            if(e.m_startPos <= positionOfTooltip && e.m_stopPos >= positionOfTooltip)
             {
-                QTextCursor copyCursor(cursor);
-                copyCursor.movePosition(QTextCursor::StartOfBlock);
-
-                int blockPositionStart = cursor.positionInBlock() - copyCursor.positionInBlock();
-
-                if (iter->m_startPos <= blockPositionStart && iter->m_stopPos >= blockPositionStart)
-                {
-                    text = iter->m_tooltipText;
-                    break;
-                }
-                iter++;
+                if(text.isEmpty()) text = e.m_tooltipText;
+                else text += "; " + e.m_tooltipText;
             }
-            QToolTip::showText(helpEvent->globalPos(), text);
         }
-        else
-        {
-            QToolTip::hideText();
-        }
+
+        if(text.isEmpty()) QToolTip::hideText();
+        else QToolTip::showText(helpEvent->globalPos(), text);
 
         return true;
     }
@@ -854,43 +849,61 @@ QCompleter *QCodeEditor::completer() const
     return m_completer;
 }
 
-void QCodeEditor::squiggle(SeverityLevel level, int lineNumber, int startSquiggle, int stopSquiggle,
+void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int, int> stop,
                            QString tooltipMessage)
 {
-    SquiggleInformation info(startSquiggle, stopSquiggle, lineNumber, tooltipMessage);
-    m_squiggler.insert(info);
+    if(stop < start) return;
+
+    SquiggleInformation info(start, stop, std::move(tooltipMessage));
+    m_squiggler.push_back(info);
 
     auto originalCursor = textCursor(); // use to restore to original position
     auto cursor = textCursor();         // use to underline
 
     cursor.movePosition(QTextCursor::Start);
-    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, lineNumber - 1);
+    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, start.first - 1);
     cursor.movePosition(QTextCursor::StartOfBlock);
-    cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, startSquiggle);
-    int i = startSquiggle;
+    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, start.second);
+    int currentLine = start.first;
 
-    cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, stopSquiggle - startSquiggle);
+    while(currentLine != stop.first)
+    {
+        cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+        currentLine++;
+    }
+
+    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, stop.second - 1);
 
     setTextCursor(cursor); // added
     QTextCharFormat defcharfmt = currentCharFormat();
+
+    m_squiggler[m_squiggler.size()-1].originalFormat = defcharfmt;
+
     QTextCharFormat newcharfmt = defcharfmt;
     newcharfmt.setFontUnderline(true);
 
     switch (level)
     {
     case SeverityLevel::Error:
-        newcharfmt.setUnderlineColor(QColor(Qt::red));
+        newcharfmt.setUnderlineColor(m_syntaxStyle->getFormat("Error").underlineColor());
+        newcharfmt.setUnderlineStyle(m_syntaxStyle->getFormat("Error").underlineStyle());
         break;
     case SeverityLevel::Warning:
-        newcharfmt.setUnderlineColor(QColor(Qt::yellow));
+        newcharfmt.setUnderlineColor(m_syntaxStyle->getFormat("Warning").underlineColor());
+        newcharfmt.setUnderlineStyle(m_syntaxStyle->getFormat("Warning").underlineStyle());
         break;
     case SeverityLevel::Information:
-        newcharfmt.setUnderlineColor(QColor(Qt::green));
+        newcharfmt.setUnderlineColor(m_syntaxStyle->getFormat("Warning").underlineColor());
+        newcharfmt.setUnderlineStyle(QTextCharFormat::DotLine);
+        break;
+    case SeverityLevel::Hint:
+        newcharfmt.setUnderlineColor(m_syntaxStyle->getFormat("Text").foreground().color());
+        newcharfmt.setUnderlineStyle(QTextCharFormat::DotLine);
     }
 
-    newcharfmt.setUnderlineStyle(QTextCharFormat::WaveUnderline);
     setCurrentCharFormat(newcharfmt);
-    cursor.movePosition(QTextCursor::WordLeft);
+    cursor.movePosition(QTextCursor::NextCharacter);
     setTextCursor(cursor); // added
     setCurrentCharFormat(defcharfmt);
     setTextCursor(originalCursor);
@@ -900,48 +913,43 @@ void QCodeEditor::squiggle(SeverityLevel level, int lineNumber, int startSquiggl
         m_highlighter->rehighlight();
 }
 
-void QCodeEditor::eraseSquiggle(int lineNumber)
-{
-    SquiggleInformation dummyKey(0, 0, lineNumber, "");
-    while (m_squiggler.find(dummyKey) != m_squiggler.end())
-    {
-        auto iter = m_squiggler.find(dummyKey);
-
-        auto cursor = textCursor();
-        auto originalCursor = textCursor();
-
-        cursor.movePosition(QTextCursor::Start);
-        cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, lineNumber - 1);
-        cursor.movePosition(QTextCursor::StartOfBlock);
-        cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, iter->m_startPos);
-        int i = iter->m_stopPos;
-
-        cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, iter->m_stopPos - iter->m_startPos);
-
-        setTextCursor(cursor); // added
-        QTextCharFormat newcharfmt = currentCharFormat();
-
-        newcharfmt.setFontUnderline(false);
-        newcharfmt.setFontItalic(false);
-
-        setCurrentCharFormat(newcharfmt);
-
-        setTextCursor(originalCursor);
-
-        if (m_highlighter != nullptr)
-            m_highlighter->rehighlight();
-
-        m_squiggler.erase(iter);
-    }
-}
-
 void QCodeEditor::clearSquiggle()
 {
-    std::set<SquiggleInformation> uniqueLines;
-    for (const auto &e : m_squiggler)
-        uniqueLines.insert(e);
-    for (const auto &e : uniqueLines)
-        eraseSquiggle(e.m_lineNumber);
+    if(m_squiggler.empty()) return;
+
+    auto originalCursor = textCursor();
+    std::reverse(m_squiggler.begin(), m_squiggler.end());
+    for(const auto& e : m_squiggler)
+    {
+        QPair<int, int> start;
+        QPair<int, int> stop;
+        start = e.m_startPos;
+        stop = e.m_stopPos;
+
+        auto originalCursor = textCursor(); // use to restore to original position
+        auto cursor = textCursor();         // use to underline
+
+        cursor.movePosition(QTextCursor::Start);
+        cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, start.first - 1);
+        cursor.movePosition(QTextCursor::StartOfBlock);
+        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, start.second);
+        int currentLine = start.first;
+
+        while(currentLine != stop.first)
+        {
+            cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+            cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+            currentLine++;
+        }
+
+        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, stop.second - 1);
+        setTextCursor(cursor); // added
+        setCurrentCharFormat(e.originalFormat); // restore original format
+        setTextCursor(originalCursor);
+
+    }
+    m_squiggler.clear();
+
 }
 
 QChar QCodeEditor::charUnderCursor(int offset) const
