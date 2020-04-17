@@ -811,7 +811,6 @@ bool QCodeEditor::event(QEvent *event)
 
         auto blockPositionStart = cursor.positionInBlock() - copyCursor.positionInBlock();
         QPair<int, int> positionOfTooltip{lineNumber, blockPositionStart};
-        qDebug() << positionOfTooltip;
 
         QString text;
         for(auto const& e : m_squiggler)
