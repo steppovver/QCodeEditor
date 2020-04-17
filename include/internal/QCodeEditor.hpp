@@ -126,21 +126,14 @@ class QCodeEditor : public QTextEdit
     QCompleter *completer() const;
 
     /**
-     * @brief Method to put a squiggly line (underline) for error/warning/information in code editor.
-     * @param level The severity of the squiggle, determines the color of squiggle.
-     * @param lineNumber The line number to squiggle.
-     * @param startSquiggle The start position in the line where squiggly line begins.
-     * @param stopSquiggle The stop position in the line where squiggly line stops.
-     * @param tooltipMessage The tooltip message to show when the squiggle is under cursor.
+     * @brief squiggle Puts a underline squiggle under text ranges in Editor
+     * @param level defines the color of the underline depending upon the severity
+     * @param tooltipMessage The tooltip hover message to show when over selection.
+     * @note QPair<int, int>: first -> Line number in 1-based indexing
+     *                        second -> Character number in 0-based indexing
      */
     void squiggle(SeverityLevel level, QPair<int,int>, QPair<int, int>, QString tooltipMessage);
 
-    /**
-     * @brief eraseSquiggle, Undo what was done by the function call `squiggle`.
-     * @note This function will erase all squiggles from a line number.
-     * @param lineNumber The line number to undo squiggle and tooltip from.
-     */
-    void eraseSquiggle(int lineNumber);
 
     /**
      * @brief clearSquiggle, Clears complete squiggle from editor
@@ -349,8 +342,6 @@ class QCodeEditor : public QTextEdit
         QPair<int,int> m_startPos;
         QPair<int,int> m_stopPos;
         QString m_tooltipText;
-        QTextCharFormat originalFormat;
-
     };
 
     QStyleSyntaxHighlighter *m_highlighter;

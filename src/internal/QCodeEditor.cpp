@@ -852,6 +852,7 @@ QCompleter *QCodeEditor::completer() const
 void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int, int> stop,
                            QString tooltipMessage)
 {
+
     if(stop < start) return;
 
     SquiggleInformation info(start, stop, std::move(tooltipMessage));
@@ -864,21 +865,15 @@ void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int
     cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, start.first - 1);
     cursor.movePosition(QTextCursor::StartOfBlock);
     cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, start.second);
-    int currentLine = start.first;
 
-    while(currentLine != stop.first)
-    {
-        cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
-        currentLine++;
-    }
+    if(stop.first > start.first)
+        cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor, stop.first - start.first);
 
-    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, stop.second - 1);
+    cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::KeepAnchor);
+    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, stop.second);
 
     setTextCursor(cursor); // added
     QTextCharFormat defcharfmt = currentCharFormat();
-
-    m_squiggler[m_squiggler.size()-1].originalFormat = defcharfmt;
 
     QTextCharFormat newcharfmt = defcharfmt;
     newcharfmt.setFontUnderline(true);
@@ -918,36 +913,19 @@ void QCodeEditor::clearSquiggle()
     if(m_squiggler.empty()) return;
 
     auto originalCursor = textCursor();
-    std::reverse(m_squiggler.begin(), m_squiggler.end());
-    for(const auto& e : m_squiggler)
-    {
-        QPair<int, int> start;
-        QPair<int, int> stop;
-        start = e.m_startPos;
-        stop = e.m_stopPos;
+    auto cursor = textCursor();
 
-        auto originalCursor = textCursor(); // use to restore to original position
-        auto cursor = textCursor();         // use to underline
+    cursor.select(QTextCursor::SelectionType::Document);
 
-        cursor.movePosition(QTextCursor::Start);
-        cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, start.first - 1);
-        cursor.movePosition(QTextCursor::StartOfBlock);
-        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, start.second);
-        int currentLine = start.first;
+    setTextCursor(cursor);
+    setCurrentCharFormat(QTextCharFormat());
+    setTextCursor(originalCursor);
 
-        while(currentLine != stop.first)
-        {
-            cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-            cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
-            currentLine++;
-        }
 
-        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, stop.second - 1);
-        setTextCursor(cursor); // added
-        setCurrentCharFormat(e.originalFormat); // restore original format
-        setTextCursor(originalCursor);
 
-    }
+    if (m_highlighter != nullptr)
+        m_highlighter->rehighlight();
+
     m_squiggler.clear();
 
 }

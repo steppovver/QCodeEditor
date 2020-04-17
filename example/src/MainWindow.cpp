@@ -178,11 +178,11 @@ void MainWindow::setupWidgets()
     m_codeEditor->setCompleter  (m_completers[0].second);
     m_codeEditor->setHighlighter(new QCXXHighlighter);
 
-    m_codeEditor->squiggle(QCodeEditor::SeverityLevel::Warning, {3,2}, {13,5}, "unused variable");
-    m_codeEditor->squiggle(QCodeEditor::SeverityLevel::Error, {3,5}, {3,7}, "Big error");
+   // m_codeEditor->squiggle(QCodeEditor::SeverityLevel::Warning, {3,2}, {13,5}, "unused variable");
+    m_codeEditor->squiggle(QCodeEditor::SeverityLevel::Error, {7,0}, {8,0}, "Big error");
 
 
-    m_codeEditor->clearSquiggle();
+    //m_codeEditor->clearSquiggle();
 
     QStringList list;
     // Code samples
