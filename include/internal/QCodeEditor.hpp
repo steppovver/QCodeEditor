@@ -132,8 +132,7 @@ class QCodeEditor : public QTextEdit
      * @note QPair<int, int>: first -> Line number in 1-based indexing
      *                        second -> Character number in 0-based indexing
      */
-    void squiggle(SeverityLevel level, QPair<int,int>, QPair<int, int>, QString tooltipMessage);
-
+    void squiggle(SeverityLevel level, QPair<int, int>, QPair<int, int>, QString tooltipMessage);
 
     /**
      * @brief clearSquiggle, Clears complete squiggle from editor
@@ -339,8 +338,8 @@ class QCodeEditor : public QTextEdit
         {
         }
 
-        QPair<int,int> m_startPos;
-        QPair<int,int> m_stopPos;
+        QPair<int, int> m_startPos;
+        QPair<int, int> m_stopPos;
         QString m_tooltipText;
     };
 

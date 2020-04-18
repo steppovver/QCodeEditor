@@ -1,17 +1,14 @@
 // QCodeEditor
 #include <QJavaHighlighter>
-#include <QSyntaxStyle>
 #include <QLanguage>
+#include <QSyntaxStyle>
 
 // Qt
 #include <QFile>
 
-
-QJavaHighlighter::QJavaHighlighter(QTextDocument* document) :
-    QStyleSyntaxHighlighter(document),
-    m_highlightRules     (),
-    m_commentStartPattern(QRegularExpression(R"(/\*)")),
-    m_commentEndPattern  (QRegularExpression(R"(\*/)"))
+QJavaHighlighter::QJavaHighlighter(QTextDocument *document)
+    : QStyleSyntaxHighlighter(document), m_highlightRules(), m_commentStartPattern(QRegularExpression(R"(/\*)")),
+      m_commentEndPattern(QRegularExpression(R"(\*/)"))
 {
     Q_INIT_RESOURCE(qcodeeditor_resources);
 
@@ -30,40 +27,31 @@ QJavaHighlighter::QJavaHighlighter(QTextDocument* document) :
     }
 
     auto keys = language.keys();
-    for (auto&& key : keys)
+    for (auto &&key : keys)
     {
         auto names = language.names(key);
-        for (auto&& name : names)
+        for (auto &&name : names)
         {
-            m_highlightRules.append({
-                QRegularExpression(QString(R"(\b%1\b)").arg(name)),
-                key
-            });
+            m_highlightRules.append({QRegularExpression(QString(R"(\b%1\b)").arg(name)), key});
         }
     }
 
     // Numbers
-    m_highlightRules.append({
-        QRegularExpression(R"((?<=\b|\s|^)(?i)(?:(?:[0-9]+\.[0-9]*(?:e[+-]?[0-9]+)?[fd]?)|(?:\.[0-9]+(?:e[+-]?[0-9]+)?[fd]?)|(?:[0-9]+(?:e[+-]?[0-9]+)[fd]?)|(?:[0-9]+(?:e[+-]?[0-9]+)?[fd])|(?:(?:(?:0x[0-9a-f]+\.?)|(?:0x[0-9a-f]*\.[0-9a-f]+))p[+-]?[0-9]+[fd]?)|(?:0)|(?:[1-9][0-9]*)|(?:0x[0-9a-f]+)|(?:0[0-7]+))(?=\b|\s|$))"),
-        "Number"
-    });
+    m_highlightRules.append(
+        {QRegularExpression(
+             R"((?<=\b|\s|^)(?i)(?:(?:[0-9]+\.[0-9]*(?:e[+-]?[0-9]+)?[fd]?)|(?:\.[0-9]+(?:e[+-]?[0-9]+)?[fd]?)|(?:[0-9]+(?:e[+-]?[0-9]+)[fd]?)|(?:[0-9]+(?:e[+-]?[0-9]+)?[fd])|(?:(?:(?:0x[0-9a-f]+\.?)|(?:0x[0-9a-f]*\.[0-9a-f]+))p[+-]?[0-9]+[fd]?)|(?:0)|(?:[1-9][0-9]*)|(?:0x[0-9a-f]+)|(?:0[0-7]+))(?=\b|\s|$))"),
+         "Number"});
 
     // Strings
-    m_highlightRules.append({
-        QRegularExpression(R"("[^\n"]*")"),
-        "String"
-    });
+    m_highlightRules.append({QRegularExpression(R"("[^\n"]*")"), "String"});
 
     // Single line
-    m_highlightRules.append({
-        QRegularExpression(R"(//[^\n]*)"),
-        "Comment"
-    });
+    m_highlightRules.append({QRegularExpression(R"(//[^\n]*)"), "Comment"});
 }
 
-void QJavaHighlighter::highlightBlock(const QString& text)
+void QJavaHighlighter::highlightBlock(const QString &text)
 {
-    for (auto& rule : m_highlightRules)
+    for (auto &rule : m_highlightRules)
     {
         auto matchIterator = rule.pattern.globalMatch(text);
 
@@ -71,11 +59,7 @@ void QJavaHighlighter::highlightBlock(const QString& text)
         {
             auto match = matchIterator.next();
 
-            setFormat(
-                match.capturedStart(),
-                match.capturedLength(),
-                syntaxStyle()->getFormat(rule.formatName)
-            );
+            setFormat(match.capturedStart(), match.capturedLength(), syntaxStyle()->getFormat(rule.formatName));
         }
     }
 
@@ -104,11 +88,7 @@ void QJavaHighlighter::highlightBlock(const QString& text)
             commentLength = endIndex - startIndex + match.capturedLength();
         }
 
-        setFormat(
-            startIndex,
-            commentLength,
-            syntaxStyle()->getFormat("Comment")
-        );
+        setFormat(startIndex, commentLength, syntaxStyle()->getFormat("Comment"));
         startIndex = text.indexOf(m_commentStartPattern, startIndex + commentLength);
     }
 }

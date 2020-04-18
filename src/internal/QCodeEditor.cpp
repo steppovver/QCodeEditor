@@ -813,17 +813,21 @@ bool QCodeEditor::event(QEvent *event)
         QPair<int, int> positionOfTooltip{lineNumber, blockPositionStart};
 
         QString text;
-        for(auto const& e : m_squiggler)
+        for (auto const &e : m_squiggler)
         {
-            if(e.m_startPos <= positionOfTooltip && e.m_stopPos >= positionOfTooltip)
+            if (e.m_startPos <= positionOfTooltip && e.m_stopPos >= positionOfTooltip)
             {
-                if(text.isEmpty()) text = e.m_tooltipText;
-                else text += "; " + e.m_tooltipText;
+                if (text.isEmpty())
+                    text = e.m_tooltipText;
+                else
+                    text += "; " + e.m_tooltipText;
             }
         }
 
-        if(text.isEmpty()) QToolTip::hideText();
-        else QToolTip::showText(helpEvent->globalPos(), text);
+        if (text.isEmpty())
+            QToolTip::hideText();
+        else
+            QToolTip::showText(helpEvent->globalPos(), text);
 
         return true;
     }
@@ -848,11 +852,11 @@ QCompleter *QCodeEditor::completer() const
     return m_completer;
 }
 
-void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int, int> stop,
-                           QString tooltipMessage)
+void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int, int> stop, QString tooltipMessage)
 {
 
-    if(stop < start) return;
+    if (stop < start)
+        return;
 
     SquiggleInformation info(start, stop, std::move(tooltipMessage));
     m_squiggler.push_back(info);
@@ -865,7 +869,7 @@ void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int
     cursor.movePosition(QTextCursor::StartOfBlock);
     cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, start.second);
 
-    if(stop.first > start.first)
+    if (stop.first > start.first)
         cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor, stop.first - start.first);
 
     cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::KeepAnchor);
@@ -909,7 +913,8 @@ void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int
 
 void QCodeEditor::clearSquiggle()
 {
-    if(m_squiggler.empty()) return;
+    if (m_squiggler.empty())
+        return;
 
     auto originalCursor = textCursor();
     auto cursor = textCursor();
@@ -920,13 +925,10 @@ void QCodeEditor::clearSquiggle()
     setCurrentCharFormat(QTextCharFormat());
     setTextCursor(originalCursor);
 
-
-
     if (m_highlighter != nullptr)
         m_highlighter->rehighlight();
 
     m_squiggler.clear();
-
 }
 
 QChar QCodeEditor::charUnderCursor(int offset) const
