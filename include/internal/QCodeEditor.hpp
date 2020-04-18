@@ -354,7 +354,7 @@ class QCodeEditor : public QTextEdit
     bool m_autoRemoveParentheses;
     QString m_tabReplace;
 
-    QList<QTextEdit::ExtraSelection> extra1, extra2;
+    QList<QTextEdit::ExtraSelection> extra1, extra2, extra_squiggles;
 
     std::vector<SquiggleInformation> m_squiggler;
 };

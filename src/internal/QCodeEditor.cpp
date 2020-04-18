@@ -30,7 +30,7 @@ static QVector<QPair<QString, QString>> parentheses = {{"(", ")"}, {"{", "}"}, {
 QCodeEditor::QCodeEditor(QWidget *widget)
     : QTextEdit(widget), m_highlighter(nullptr), m_syntaxStyle(nullptr), m_lineNumberArea(new QLineNumberArea(this)),
       m_completer(nullptr), m_autoIndentation(true), m_autoParentheses(true), m_replaceTab(true),
-      m_autoRemoveParentheses(true), m_tabReplace(QString(4, ' ')), extra1(), extra2()
+      m_autoRemoveParentheses(true), m_tabReplace(QString(4, ' ')), extra1(), extra2(), extra_squiggles(), m_squiggler()
 {
     initFont();
     performConnections();
@@ -151,7 +151,7 @@ void QCodeEditor::updateExtraSelection1()
     highlightCurrentLine();
     highlightParenthesis();
 
-    setExtraSelections(extra1 + extra2);
+    setExtraSelections(extra1 + extra2 + extra_squiggles);
 }
 
 void QCodeEditor::updateExtraSelection2()
@@ -160,7 +160,7 @@ void QCodeEditor::updateExtraSelection2()
 
     highlightOccurrences();
 
-    setExtraSelections(extra1 + extra2);
+    setExtraSelections(extra1 + extra2 + extra_squiggles);
 }
 
 void QCodeEditor::indent()
@@ -854,15 +854,13 @@ QCompleter *QCodeEditor::completer() const
 
 void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int, int> stop, QString tooltipMessage)
 {
-
     if (stop < start)
         return;
 
-    SquiggleInformation info(start, stop, std::move(tooltipMessage));
+    SquiggleInformation info(start, stop, tooltipMessage);
     m_squiggler.push_back(info);
 
-    auto originalCursor = textCursor(); // use to restore to original position
-    auto cursor = textCursor();         // use to underline
+    auto cursor = textCursor();
 
     cursor.movePosition(QTextCursor::Start);
     cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, start.first - 1);
@@ -875,10 +873,7 @@ void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int
     cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::KeepAnchor);
     cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, stop.second);
 
-    setTextCursor(cursor); // added
-    QTextCharFormat defcharfmt = currentCharFormat();
-
-    QTextCharFormat newcharfmt = defcharfmt;
+    QTextCharFormat newcharfmt = currentCharFormat();
     newcharfmt.setFontUnderline(true);
 
     switch (level)
@@ -900,15 +895,9 @@ void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int
         newcharfmt.setUnderlineStyle(QTextCharFormat::DotLine);
     }
 
-    setCurrentCharFormat(newcharfmt);
-    cursor.movePosition(QTextCursor::NextCharacter);
-    setTextCursor(cursor); // added
-    setCurrentCharFormat(defcharfmt);
-    setTextCursor(originalCursor);
-    setFocus();
+    extra_squiggles.push_back({cursor, newcharfmt});
 
-    if (m_highlighter != nullptr)
-        m_highlighter->rehighlight();
+    setExtraSelections(extra1 + extra2 + extra_squiggles);
 }
 
 void QCodeEditor::clearSquiggle()
@@ -916,19 +905,10 @@ void QCodeEditor::clearSquiggle()
     if (m_squiggler.empty())
         return;
 
-    auto originalCursor = textCursor();
-    auto cursor = textCursor();
-
-    cursor.select(QTextCursor::SelectionType::Document);
-
-    setTextCursor(cursor);
-    setCurrentCharFormat(QTextCharFormat());
-    setTextCursor(originalCursor);
-
-    if (m_highlighter != nullptr)
-        m_highlighter->rehighlight();
-
     m_squiggler.clear();
+    extra_squiggles.clear();
+
+    setExtraSelections(extra1 + extra2);
 }
 
 QChar QCodeEditor::charUnderCursor(int offset) const
