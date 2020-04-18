@@ -270,6 +270,37 @@ void QCodeEditor::deleteLine()
     cursor.insertText("");
 }
 
+void QCodeEditor::duplicate()
+{
+    auto cursor = textCursor();
+    if (cursor.hasSelection()) // duplicate the selection
+    {
+        auto text = cursor.selectedText();
+        bool cursorAtEnd = cursor.selectionEnd() == cursor.position();
+        cursor.insertText(text + text);
+        if (cursorAtEnd)
+        {
+            cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, text.length());
+            cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, text.length());
+        }
+        else
+        {
+            cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::KeepAnchor, text.length());
+        }
+    }
+    else // duplicate the current line
+    {
+        int column = cursor.columnNumber();
+        cursor.movePosition(QTextCursor::StartOfBlock);
+        cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+        auto text = cursor.selectedText();
+        cursor.insertText(text + "\n" + text);
+        cursor.movePosition(QTextCursor::StartOfBlock);
+        cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, column);
+    }
+    setTextCursor(cursor);
+}
+
 void QCodeEditor::toggleComment()
 {
     bool isCpp = dynamic_cast<QCXXHighlighter *>(m_highlighter);

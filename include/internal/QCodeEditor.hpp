@@ -172,6 +172,11 @@ class QCodeEditor : public QTextEdit
     void deleteLine();
 
     /**
+     * @brief Slot, that duplicate the current line or the selection.
+     */
+    void duplicate();
+
+    /**
      * @brief Slot, that toggle single line comment of the
      * selected lines.
      */
