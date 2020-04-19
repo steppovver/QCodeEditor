@@ -448,7 +448,7 @@ void QCodeEditor::highlightOccurrences()
                 {
                     QTextEdit::ExtraSelection e;
                     e.cursor = cursor;
-                    e.format.setFontUnderline(true);
+                    e.format.setBackground(m_syntaxStyle->getFormat("Selection").background());
                     extra2.push_back(e);
                 }
                 cursor = doc->find(text, cursor, QTextDocument::FindWholeWords | QTextDocument::FindCaseSensitively);
