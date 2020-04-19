@@ -3,16 +3,11 @@
 
 // Qt
 #include <QDebug>
-#include <QXmlStreamReader>
 #include <QFile>
+#include <QXmlStreamReader>
 
-QSyntaxStyle::QSyntaxStyle(QObject* parent) :
-    QObject(parent),
-    m_name(),
-    m_data(),
-    m_loaded(false)
+QSyntaxStyle::QSyntaxStyle(QObject *parent) : QObject(parent), m_name(), m_data(), m_loaded(false)
 {
-
 }
 
 bool QSyntaxStyle::load(QString fl)
@@ -23,7 +18,7 @@ bool QSyntaxStyle::load(QString fl)
     {
         auto token = reader.readNext();
 
-        if(token == QXmlStreamReader::StartElement)
+        if (token == QXmlStreamReader::StartElement)
         {
             if (reader.name() == "style-scheme")
             {
@@ -50,14 +45,12 @@ bool QSyntaxStyle::load(QString fl)
                     format.setForeground(QColor(attributes.value("foreground").toString()));
                 }
 
-                if (attributes.hasAttribute("bold") &&
-                    attributes.value("bold") == "true")
+                if (attributes.hasAttribute("bold") && attributes.value("bold") == "true")
                 {
                     format.setFontWeight(QFont::Weight::Bold);
                 }
 
-                if (attributes.hasAttribute("italic") &&
-                    attributes.value("italic") == "true")
+                if (attributes.hasAttribute("italic") && attributes.value("italic") == "true")
                 {
                     format.setFontItalic(true);
                 }
@@ -136,7 +129,7 @@ bool QSyntaxStyle::isLoaded() const
     return m_loaded;
 }
 
-QSyntaxStyle* QSyntaxStyle::defaultStyle()
+QSyntaxStyle *QSyntaxStyle::defaultStyle()
 {
     static QSyntaxStyle style;
 

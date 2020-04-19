@@ -1,10 +1,10 @@
 // QCodeEditor
 #include <QCXXHighlighter>
 #include <QCodeEditor>
+#include <QJSHighlighter>
 #include <QJavaHighlighter>
 #include <QLineNumberArea>
 #include <QPythonHighlighter>
-#include <QJSHighlighter>
 #include <QStyleSyntaxHighlighter>
 #include <QSyntaxStyle>
 
@@ -333,10 +333,9 @@ void QCodeEditor::toggleBlockComment()
     auto text = cursor.selectedText();
     int pos1, pos2;
     if (text.indexOf(commentStart) == 0 && text.length() >= commentStart.length() + commentEnd.length() &&
-            text.lastIndexOf(commentEnd) + commentEnd.length() == text.length())
+        text.lastIndexOf(commentEnd) + commentEnd.length() == text.length())
     {
-        insertPlainText(
-                    text.mid(commentStart.length(), text.length() - commentStart.length() - commentEnd.length()));
+        insertPlainText(text.mid(commentStart.length(), text.length() - commentStart.length() - commentEnd.length()));
         pos1 = startPos;
         pos2 = endPos - commentStart.length() - commentEnd.length();
     }

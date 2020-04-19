@@ -1,19 +1,17 @@
 // QCodeEditor
 #include <QStyleSyntaxHighlighter>
 
-QStyleSyntaxHighlighter::QStyleSyntaxHighlighter(QTextDocument* document) : 
-    QSyntaxHighlighter(document),
-    m_syntaxStyle(nullptr)
+QStyleSyntaxHighlighter::QStyleSyntaxHighlighter(QTextDocument *document)
+    : QSyntaxHighlighter(document), m_syntaxStyle(nullptr)
 {
-
 }
 
-void QStyleSyntaxHighlighter::setSyntaxStyle(QSyntaxStyle* style)
+void QStyleSyntaxHighlighter::setSyntaxStyle(QSyntaxStyle *style)
 {
     m_syntaxStyle = style;
 }
 
-QSyntaxStyle* QStyleSyntaxHighlighter::syntaxStyle() const
+QSyntaxStyle *QStyleSyntaxHighlighter::syntaxStyle() const
 {
     return m_syntaxStyle;
 }
@@ -47,4 +45,3 @@ void QStyleSyntaxHighlighter::setEndCommentBlockSequence(const QString &endComme
 {
     m_endCommentBlockSequence = endCommentBlockSequence;
 }
-

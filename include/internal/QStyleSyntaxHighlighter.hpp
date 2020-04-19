@@ -11,30 +11,28 @@ class QSyntaxStyle;
  */
 class QStyleSyntaxHighlighter : public QSyntaxHighlighter
 {
-public:
-
+  public:
     /**
      * @brief Constructor.
      * @param document Pointer to text document.
      */
-    explicit QStyleSyntaxHighlighter(QTextDocument* document=nullptr);
+    explicit QStyleSyntaxHighlighter(QTextDocument *document = nullptr);
 
     // Disable copying
-    QStyleSyntaxHighlighter(const QStyleSyntaxHighlighter&) = delete;
-    QStyleSyntaxHighlighter& operator=(const QStyleSyntaxHighlighter&) = delete;
+    QStyleSyntaxHighlighter(const QStyleSyntaxHighlighter &) = delete;
+    QStyleSyntaxHighlighter &operator=(const QStyleSyntaxHighlighter &) = delete;
 
     /**
      * @brief Method for setting syntax style.
      * @param style Pointer to syntax style.
      */
-    void setSyntaxStyle(QSyntaxStyle* style);
+    void setSyntaxStyle(QSyntaxStyle *style);
 
     /**
      * @brief Method for getting syntax style.
      * @return Pointer to syntax style. May be nullptr.
      */
-    QSyntaxStyle* syntaxStyle() const;
-
+    QSyntaxStyle *syntaxStyle() const;
 
     /**
      * @brief Method for getting a sequence that marks a comment line.
@@ -78,12 +76,11 @@ public:
      */
     void setEndCommentBlockSequence(const QString &endCommentBlockSequence);
 
-private:
-    QSyntaxStyle* m_syntaxStyle;
+  private:
+    QSyntaxStyle *m_syntaxStyle;
 
-protected:
+  protected:
     QString m_commentLineSequence;
     QString m_startCommentBlockSequence;
     QString m_endCommentBlockSequence;
 };
-

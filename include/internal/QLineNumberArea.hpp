@@ -13,17 +13,16 @@ class QLineNumberArea : public QWidget
 {
     Q_OBJECT
 
-public:
-
+  public:
     /**
      * @brief Constructor.
      * @param parent Pointer to parent QTextEdit widget.
      */
-    explicit QLineNumberArea(QCodeEditor* parent=nullptr);
+    explicit QLineNumberArea(QCodeEditor *parent = nullptr);
 
     // Disable copying
-    QLineNumberArea(const QLineNumberArea&) = delete;
-    QLineNumberArea& operator=(const QLineNumberArea&) = delete;
+    QLineNumberArea(const QLineNumberArea &) = delete;
+    QLineNumberArea &operator=(const QLineNumberArea &) = delete;
 
     /**
      * @brief Overridden method for getting line number area
@@ -35,22 +34,19 @@ public:
      * @brief Method for setting syntax style object.
      * @param style Pointer to syntax style.
      */
-    void setSyntaxStyle(QSyntaxStyle* style);
+    void setSyntaxStyle(QSyntaxStyle *style);
 
     /**
      * @brief Method for getting syntax style.
      * @return Pointer to syntax style.
      */
-    QSyntaxStyle* syntaxStyle() const;
+    QSyntaxStyle *syntaxStyle() const;
 
-protected:
-    void paintEvent(QPaintEvent* event) override;
+  protected:
+    void paintEvent(QPaintEvent *event) override;
 
-private:
+  private:
+    QSyntaxStyle *m_syntaxStyle;
 
-    QSyntaxStyle* m_syntaxStyle;
-
-    QCodeEditor* m_codeEditParent;
-
+    QCodeEditor *m_codeEditParent;
 };
-
