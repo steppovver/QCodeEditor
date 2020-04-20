@@ -1,3 +1,5 @@
+#include <utility>
+
 // QCodeEditor
 #include <QCXXHighlighter>
 #include <QCodeEditor>
@@ -13,6 +15,7 @@
 #include <QAbstractTextDocumentLayout>
 #include <QCompleter>
 #include <QCursor>
+#include <QDebug>
 #include <QFontDatabase>
 #include <QMimeData>
 #include <QPaintEvent>
@@ -21,16 +24,18 @@
 #include <QTextBlock>
 #include <QTextCharFormat>
 #include <QTextStream>
+#include <QToolTip>
 
 static QVector<QPair<QString, QString>> parentheses = {{"(", ")"}, {"{", "}"}, {"[", "]"}, {"\"", "\""}, {"'", "'"}};
 
 QCodeEditor::QCodeEditor(QWidget *widget)
     : QTextEdit(widget), m_highlighter(nullptr), m_syntaxStyle(nullptr), m_lineNumberArea(new QLineNumberArea(this)),
       m_completer(nullptr), m_autoIndentation(true), m_autoParentheses(true), m_replaceTab(true),
-      m_autoRemoveParentheses(true), m_tabReplace(QString(4, ' ')), extra1(), extra2()
+      m_autoRemoveParentheses(true), m_tabReplace(QString(4, ' ')), extra1(), extra2(), extra_squiggles(), m_squiggler()
 {
     initFont();
     performConnections();
+    setMouseTracking(true);
 
     setSyntaxStyle(QSyntaxStyle::defaultStyle());
 }
@@ -147,7 +152,7 @@ void QCodeEditor::updateExtraSelection1()
     highlightCurrentLine();
     highlightParenthesis();
 
-    setExtraSelections(extra1 + extra2);
+    setExtraSelections(extra1 + extra2 + extra_squiggles);
 }
 
 void QCodeEditor::updateExtraSelection2()
@@ -156,7 +161,7 @@ void QCodeEditor::updateExtraSelection2()
 
     highlightOccurrences();
 
-    setExtraSelections(extra1 + extra2);
+    setExtraSelections(extra1 + extra2 + extra_squiggles);
 }
 
 void QCodeEditor::indent()
@@ -421,7 +426,7 @@ void QCodeEditor::highlightParenthesis()
             selection.cursor = textCursor();
             selection.cursor.clearSelection();
             selection.cursor.movePosition(directionEnum, QTextCursor::MoveMode::MoveAnchor,
-                                          std::abs(textCursor().position() - position));
+                                          qAbs(textCursor().position() - position));
 
             selection.cursor.movePosition(QTextCursor::MoveOperation::Right, QTextCursor::MoveMode::KeepAnchor, 1);
 
@@ -473,7 +478,7 @@ void QCodeEditor::highlightOccurrences()
                 {
                     QTextEdit::ExtraSelection e;
                     e.cursor = cursor;
-                    e.format.setFontUnderline(true);
+                    e.format.setBackground(m_syntaxStyle->getFormat("Selection").background());
                     extra2.push_back(e);
                 }
                 cursor = doc->find(text, cursor, QTextDocument::FindWholeWords | QTextDocument::FindCaseSensitively);
@@ -820,6 +825,45 @@ void QCodeEditor::focusInEvent(QFocusEvent *e)
     QTextEdit::focusInEvent(e);
 }
 
+bool QCodeEditor::event(QEvent *event)
+{
+    if (event->type() == QEvent::ToolTip)
+    {
+        auto *helpEvent = dynamic_cast<QHelpEvent *>(event);
+        auto point = helpEvent->pos();
+        point.setX(point.x() - m_lineNumberArea->geometry().right());
+        QTextCursor cursor = cursorForPosition(point);
+
+        auto lineNumber = cursor.blockNumber() + 1;
+
+        QTextCursor copyCursor(cursor);
+        copyCursor.movePosition(QTextCursor::StartOfBlock);
+
+        auto blockPositionStart = cursor.positionInBlock() - copyCursor.positionInBlock();
+        QPair<int, int> positionOfTooltip{lineNumber, blockPositionStart};
+
+        QString text;
+        for (auto const &e : m_squiggler)
+        {
+            if (e.m_startPos <= positionOfTooltip && e.m_stopPos >= positionOfTooltip)
+            {
+                if (text.isEmpty())
+                    text = e.m_tooltipText;
+                else
+                    text += "; " + e.m_tooltipText;
+            }
+        }
+
+        if (text.isEmpty())
+            QToolTip::hideText();
+        else
+            QToolTip::showText(helpEvent->globalPos(), text);
+
+        return true;
+    }
+    return QTextEdit::event(event);
+}
+
 void QCodeEditor::insertCompletion(QString s)
 {
     if (m_completer->widget() != this)
@@ -836,6 +880,65 @@ void QCodeEditor::insertCompletion(QString s)
 QCompleter *QCodeEditor::completer() const
 {
     return m_completer;
+}
+
+void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int, int> stop, QString tooltipMessage)
+{
+    if (stop < start)
+        return;
+
+    SquiggleInformation info(start, stop, tooltipMessage);
+    m_squiggler.push_back(info);
+
+    auto cursor = textCursor();
+
+    cursor.movePosition(QTextCursor::Start);
+    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, start.first - 1);
+    cursor.movePosition(QTextCursor::StartOfBlock);
+    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, start.second);
+
+    if (stop.first > start.first)
+        cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor, stop.first - start.first);
+
+    cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::KeepAnchor);
+    cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, stop.second);
+
+    QTextCharFormat newcharfmt = currentCharFormat();
+    newcharfmt.setFontUnderline(true);
+
+    switch (level)
+    {
+    case SeverityLevel::Error:
+        newcharfmt.setUnderlineColor(m_syntaxStyle->getFormat("Error").underlineColor());
+        newcharfmt.setUnderlineStyle(m_syntaxStyle->getFormat("Error").underlineStyle());
+        break;
+    case SeverityLevel::Warning:
+        newcharfmt.setUnderlineColor(m_syntaxStyle->getFormat("Warning").underlineColor());
+        newcharfmt.setUnderlineStyle(m_syntaxStyle->getFormat("Warning").underlineStyle());
+        break;
+    case SeverityLevel::Information:
+        newcharfmt.setUnderlineColor(m_syntaxStyle->getFormat("Warning").underlineColor());
+        newcharfmt.setUnderlineStyle(QTextCharFormat::DotLine);
+        break;
+    case SeverityLevel::Hint:
+        newcharfmt.setUnderlineColor(m_syntaxStyle->getFormat("Text").foreground().color());
+        newcharfmt.setUnderlineStyle(QTextCharFormat::DotLine);
+    }
+
+    extra_squiggles.push_back({cursor, newcharfmt});
+
+    setExtraSelections(extra1 + extra2 + extra_squiggles);
+}
+
+void QCodeEditor::clearSquiggle()
+{
+    if (m_squiggler.empty())
+        return;
+
+    m_squiggler.clear();
+    extra_squiggles.clear();
+
+    setExtraSelections(extra1 + extra2);
 }
 
 QChar QCodeEditor::charUnderCursor(int offset) const

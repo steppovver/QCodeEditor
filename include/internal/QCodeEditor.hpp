@@ -3,6 +3,9 @@
 // Qt
 #include <QTextEdit> // Required for inheritance
 
+// Standard
+#include <set>
+
 class QCompleter;
 class QLineNumberArea;
 class QSyntaxStyle;
@@ -17,6 +20,17 @@ class QCodeEditor : public QTextEdit
     Q_OBJECT
 
   public:
+    /**
+     * @brief The SeverityLevel enum
+     */
+    enum class SeverityLevel
+    {
+        Error,
+        Warning,
+        Information,
+        Hint
+    };
+
     /**
      * @brief Constructor.
      * @param widget Pointer to parent widget.
@@ -110,6 +124,20 @@ class QCodeEditor : public QTextEdit
      * @return Pointer to completer.
      */
     QCompleter *completer() const;
+
+    /**
+     * @brief squiggle Puts a underline squiggle under text ranges in Editor
+     * @param level defines the color of the underline depending upon the severity
+     * @param tooltipMessage The tooltip hover message to show when over selection.
+     * @note QPair<int, int>: first -> Line number in 1-based indexing
+     *                        second -> Character number in 0-based indexing
+     */
+    void squiggle(SeverityLevel level, QPair<int, int>, QPair<int, int>, QString tooltipMessage);
+
+    /**
+     * @brief clearSquiggle, Clears complete squiggle from editor
+     */
+    void clearSquiggle();
 
   public Q_SLOTS:
 
@@ -226,6 +254,11 @@ class QCodeEditor : public QTextEdit
      */
     void focusInEvent(QFocusEvent *e) override;
 
+    /**
+     * @brief Method for tooltip generation
+     */
+    bool event(QEvent *e) override;
+
   private:
     /**
      * @brief Method for initializing default
@@ -300,6 +333,21 @@ class QCodeEditor : public QTextEdit
      */
     void addInEachLineOfSelection(const QRegularExpression &regex, const QString &str);
 
+    /**
+     * @brief The SquiggleInformation struct, Line number will be index of vector+1;
+     */
+    struct SquiggleInformation
+    {
+        SquiggleInformation(QPair<int, int> start, QPair<int, int> stop, QString text)
+            : m_startPos(start), m_stopPos(stop), m_tooltipText(std::move(text))
+        {
+        }
+
+        QPair<int, int> m_startPos;
+        QPair<int, int> m_stopPos;
+        QString m_tooltipText;
+    };
+
     QStyleSyntaxHighlighter *m_highlighter;
     QSyntaxStyle *m_syntaxStyle;
     QLineNumberArea *m_lineNumberArea;
@@ -311,5 +359,7 @@ class QCodeEditor : public QTextEdit
     bool m_autoRemoveParentheses;
     QString m_tabReplace;
 
-    QList<QTextEdit::ExtraSelection> extra1, extra2;
+    QList<QTextEdit::ExtraSelection> extra1, extra2, extra_squiggles;
+
+    std::vector<SquiggleInformation> m_squiggler;
 };

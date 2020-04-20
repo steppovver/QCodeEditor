@@ -97,6 +97,13 @@ bool QSyntaxStyle::load(QString fl)
                     format.setUnderlineStyle(s);
                 }
 
+                if (attributes.hasAttribute("underlineColor"))
+                {
+                    auto color = attributes.value("underlineColor");
+
+                    format.setUnderlineColor(QColor(color.toString()));
+                }
+
                 m_data[name.toString()] = format;
             }
         }
