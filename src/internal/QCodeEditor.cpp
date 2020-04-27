@@ -712,6 +712,11 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
                 moveCursor(QTextCursor::EndOfBlock);
                 return;
             }
+            else
+            {
+                indentationSpaces = indentationSpaces.left(textCursor().columnNumber());
+            }
+
             insertPlainText("\n" + indentationSpaces);
             return;
         }
