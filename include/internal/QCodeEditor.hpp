@@ -3,9 +3,6 @@
 // Qt
 #include <QTextEdit> // Required for inheritance
 
-// Standard
-#include <set>
-
 class QCompleter;
 class QLineNumberArea;
 class QSyntaxStyle;
@@ -22,13 +19,14 @@ class QCodeEditor : public QTextEdit
   public:
     /**
      * @brief The SeverityLevel enum
+     * @note the order should be: the bigger the more important
      */
     enum class SeverityLevel
     {
-        Error,
-        Warning,
+        Hint,
         Information,
-        Hint
+        Warning,
+        Error
     };
 
     /**
@@ -338,8 +336,10 @@ class QCodeEditor : public QTextEdit
      */
     struct SquiggleInformation
     {
+        SquiggleInformation() = default;
+
         SquiggleInformation(QPair<int, int> start, QPair<int, int> stop, QString text)
-            : m_startPos(start), m_stopPos(stop), m_tooltipText(std::move(text))
+            : m_startPos(start), m_stopPos(stop), m_tooltipText(text)
         {
         }
 
@@ -361,5 +361,5 @@ class QCodeEditor : public QTextEdit
 
     QList<QTextEdit::ExtraSelection> extra1, extra2, extra_squiggles;
 
-    std::vector<SquiggleInformation> m_squiggler;
+    QVector<SquiggleInformation> m_squiggler;
 };

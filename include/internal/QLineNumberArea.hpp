@@ -3,7 +3,8 @@
 // Qt
 #include <QWidget> // Required for inheritance
 
-class QCodeEditor;
+#include <QCodeEditor>
+
 class QSyntaxStyle;
 
 /**
@@ -42,6 +43,10 @@ class QLineNumberArea : public QWidget
      */
     QSyntaxStyle *syntaxStyle() const;
 
+    void squiggle(QCodeEditor::SeverityLevel level, int from, int to);
+
+    void clearSquiggles();
+
   protected:
     void paintEvent(QPaintEvent *event) override;
 
@@ -49,4 +54,6 @@ class QLineNumberArea : public QWidget
     QSyntaxStyle *m_syntaxStyle;
 
     QCodeEditor *m_codeEditParent;
+
+    QMap<int, QCodeEditor::SeverityLevel> m_squiggles;
 };

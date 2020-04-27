@@ -12,7 +12,7 @@
 #include <QTextEdit>
 
 QLineNumberArea::QLineNumberArea(QCodeEditor *parent)
-    : QWidget(parent), m_syntaxStyle(nullptr), m_codeEditParent(parent)
+    : QWidget(parent), m_syntaxStyle(nullptr), m_codeEditParent(parent), m_squiggles()
 {
 }
 
@@ -51,6 +51,21 @@ QSyntaxStyle *QLineNumberArea::syntaxStyle() const
     return m_syntaxStyle;
 }
 
+void QLineNumberArea::squiggle(QCodeEditor::SeverityLevel level, int from, int to)
+{
+    for (int i = from - 1; i < to; ++i)
+    {
+        m_squiggles[i] = qMax(m_squiggles[i], level);
+    }
+    update();
+}
+
+void QLineNumberArea::clearSquiggles()
+{
+    m_squiggles.clear();
+    update();
+}
+
 void QLineNumberArea::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
@@ -77,6 +92,30 @@ void QLineNumberArea::paintEvent(QPaintEvent *event)
         if (block.isVisible() && bottom >= event->rect().top())
         {
             QString number = QString::number(blockNumber + 1);
+
+            if (m_squiggles.contains(blockNumber))
+            {
+                QColor squiggleColor;
+                switch (m_squiggles[blockNumber])
+                {
+                case QCodeEditor::SeverityLevel::Error:
+                    squiggleColor = m_syntaxStyle->getFormat("Error").underlineColor();
+                    break;
+                case QCodeEditor::SeverityLevel::Warning:
+                    squiggleColor = m_syntaxStyle->getFormat("Warning").underlineColor();
+                    break;
+                case QCodeEditor::SeverityLevel::Information:
+                    squiggleColor = m_syntaxStyle->getFormat("Warning").underlineColor();
+                    break;
+                case QCodeEditor::SeverityLevel::Hint:
+                    squiggleColor = m_syntaxStyle->getFormat("Text").foreground().color();
+                    break;
+                default:
+                    Q_UNREACHABLE();
+                    break;
+                }
+                painter.fillRect(0, top, sizeHint().width(), m_codeEditParent->fontMetrics().height(), squiggleColor);
+            }
 
             auto isCurrentLine = m_codeEditParent->textCursor().blockNumber() == blockNumber;
             painter.setPen(isCurrentLine ? currentLine : otherLines);
