@@ -656,6 +656,31 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
                     return;
                 }
             }
+
+            if (textCursor().columnNumber() <= indentationSpaces.length() && textCursor().columnNumber() >= 1 &&
+                !m_tabReplace.isEmpty())
+            {
+                auto cursor = textCursor();
+                int realColumn = 0, newIndentLength = 0;
+                for (int i = 0; i < cursor.columnNumber(); ++i)
+                {
+                    if (indentationSpaces[i] != '\t')
+                        ++realColumn;
+                    else
+                    {
+                        realColumn =
+                            (realColumn + m_tabReplace.length()) / m_tabReplace.length() * m_tabReplace.length();
+                    }
+                    if (realColumn % m_tabReplace.length() == 0 && i < cursor.columnNumber() - 1)
+                    {
+                        newIndentLength = i + 1;
+                    }
+                }
+                cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::KeepAnchor,
+                                    cursor.columnNumber() - newIndentLength);
+                cursor.insertText("");
+                return;
+            }
         }
 
         if (m_autoParentheses)
