@@ -23,20 +23,17 @@ QSize QLineNumberArea::sizeHint() const
         return QWidget::sizeHint();
     }
 
-    // Calculating width
-    int digits = 1;
-    int max = qMax(1, m_codeEditParent->document()->blockCount());
-    while (max >= 10)
-    {
-        max /= 10;
-        ++digits;
-    }
+    int space = 0;
+    int lineCount = m_codeEditParent->document()->blockCount();
 
+    for (int i = 0; i <= lineCount; ++i)
+    {
 #if QT_VERSION >= 0x050B00
-    int space = 13 + m_codeEditParent->fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
+        space = 15 + m_codeEditParent->fontMetrics().horizontalAdvance(QString::number(i));
 #else
-    int space = 13 + m_codeEditParent->fontMetrics().width(QLatin1Char('9')) * digits;
+        space = 15 + m_codeEditParent->fontMetrics().width(QLatin1Char(QString::number(i)));
 #endif
+    }
 
     return {space, 0};
 }
@@ -51,7 +48,7 @@ QSyntaxStyle *QLineNumberArea::syntaxStyle() const
     return m_syntaxStyle;
 }
 
-void QLineNumberArea::squiggle(QCodeEditor::SeverityLevel level, int from, int to)
+void QLineNumberArea::lint(QCodeEditor::SeverityLevel level, int from, int to)
 {
     for (int i = from - 1; i < to; ++i)
     {
@@ -60,7 +57,7 @@ void QLineNumberArea::squiggle(QCodeEditor::SeverityLevel level, int from, int t
     update();
 }
 
-void QLineNumberArea::clearSquiggles()
+void QLineNumberArea::clearLint()
 {
     m_squiggles.clear();
     update();
@@ -114,7 +111,7 @@ void QLineNumberArea::paintEvent(QPaintEvent *event)
                     Q_UNREACHABLE();
                     break;
                 }
-                painter.fillRect(0, top, sizeHint().width(), m_codeEditParent->fontMetrics().height(), squiggleColor);
+                painter.fillRect(0, top, 7, m_codeEditParent->fontMetrics().height(), squiggleColor);
             }
 
             auto isCurrentLine = m_codeEditParent->textCursor().blockNumber() == blockNumber;

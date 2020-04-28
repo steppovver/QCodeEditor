@@ -43,9 +43,9 @@ class QLineNumberArea : public QWidget
      */
     QSyntaxStyle *syntaxStyle() const;
 
-    void squiggle(QCodeEditor::SeverityLevel level, int from, int to);
+    void lint(QCodeEditor::SeverityLevel level, int from, int to);
 
-    void clearSquiggles();
+    void clearLint();
 
   protected:
     void paintEvent(QPaintEvent *event) override;

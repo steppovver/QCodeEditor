@@ -955,7 +955,7 @@ void QCodeEditor::squiggle(SeverityLevel level, QPair<int, int> start, QPair<int
 
     extra_squiggles.push_back({cursor, newcharfmt});
 
-    m_lineNumberArea->squiggle(level, start.first, stop.first);
+    m_lineNumberArea->lint(level, start.first, stop.first);
 
     setExtraSelections(extra1 + extra2 + extra_squiggles);
 }
@@ -968,7 +968,7 @@ void QCodeEditor::clearSquiggle()
     m_squiggler.clear();
     extra_squiggles.clear();
 
-    m_lineNumberArea->clearSquiggles();
+    m_lineNumberArea->clearLint();
 
     setExtraSelections(extra1 + extra2);
 }
