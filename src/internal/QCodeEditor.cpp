@@ -50,6 +50,7 @@ void QCodeEditor::initFont()
 void QCodeEditor::performConnections()
 {
     connect(document(), &QTextDocument::blockCountChanged, this, &QCodeEditor::updateLineNumberAreaWidth);
+    connect(document(), &QTextDocument::blockCountChanged, this, &QCodeEditor::updateBottomMargin);
 
     connect(verticalScrollBar(), &QScrollBar::valueChanged, [this](int) { m_lineNumberArea->update(); });
 
@@ -119,12 +120,34 @@ void QCodeEditor::resizeEvent(QResizeEvent *e)
     QTextEdit::resizeEvent(e);
 
     updateLineGeometry();
+    updateBottomMargin();
+}
+
+void QCodeEditor::changeEvent(QEvent *e)
+{
+    QTextEdit::changeEvent(e);
+    if (e->type() == QEvent::FontChange)
+        updateBottomMargin();
 }
 
 void QCodeEditor::updateLineGeometry()
 {
     QRect cr = contentsRect();
     m_lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), m_lineNumberArea->sizeHint().width(), cr.height()));
+}
+
+void QCodeEditor::updateBottomMargin()
+{
+    auto doc = document();
+    if (doc->blockCount() > 1)
+    {
+        // calling QTextFrame::setFrameFormat with an empty document makes the application crash
+        auto rf = doc->rootFrame();
+        auto format = rf->frameFormat();
+        int margin = doc->documentMargin();
+        format.setBottomMargin(qMax(margin, viewport()->height() - fontMetrics().height()) - margin);
+        rf->setFrameFormat(format);
+    }
 }
 
 void QCodeEditor::updateLineNumberAreaWidth(int)
@@ -818,7 +841,7 @@ bool QCodeEditor::tabReplace() const
 void QCodeEditor::setTabReplaceSize(int val)
 {
     m_tabReplace.fill(' ', val);
-    setTabStopDistance(QFontMetrics(font()).horizontalAdvance(QString(val * 1000, ' ')) / 1000.0);
+    setTabStopDistance(fontMetrics().horizontalAdvance(QString(val * 1000, ' ')) / 1000.0);
 }
 
 int QCodeEditor::tabReplaceSize() const
