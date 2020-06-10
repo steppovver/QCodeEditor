@@ -100,24 +100,10 @@ void QCodeEditor::updateStyle()
         QString textColor = m_syntaxStyle->getFormat("Text").foreground().color().name();
         QString selectionBackground = m_syntaxStyle->getFormat("Selection").background().color().name();
 
-        auto currentPalette = palette();
-
-        // Setting text format/color
-        currentPalette.setColor(QPalette::ColorRole::Text, m_syntaxStyle->getFormat("Text").foreground().color());
-
-        // Setting common background
-        currentPalette.setColor(QPalette::Base, m_syntaxStyle->getFormat("Text").background().color());
-
-        setPalette(currentPalette);
-        setStyleSheet("QTextEdit {"
-                      "background-color: " +
-                      backgroundColor +
-                      ";"
-                      "selection-background-color: " +
-                      selectionBackground +
-                      ";"
-                      "color: " +
-                      textColor + ";}");
+        setStyleSheet(QString("QTextEdit { background-color: %1; selection-background-color: %2; color: %3; }")
+                          .arg(backgroundColor)
+                          .arg(selectionBackground)
+                          .arg(textColor));
     }
 
     updateExtraSelection1();
