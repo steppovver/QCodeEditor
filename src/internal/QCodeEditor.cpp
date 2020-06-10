@@ -109,11 +109,15 @@ void QCodeEditor::updateStyle()
         currentPalette.setColor(QPalette::Base, m_syntaxStyle->getFormat("Text").background().color());
 
         setPalette(currentPalette);
-        setStyleSheet("QTextEdit {" 
-                      "background-color: " + backgroundColor + ";"
-                      "selection-background-color: " + selectionBackground + ";"
-                      "color: " + textColor + ";}");
-        
+        setStyleSheet("QTextEdit {"
+                      "background-color: " +
+                      backgroundColor +
+                      ";"
+                      "selection-background-color: " +
+                      selectionBackground +
+                      ";"
+                      "color: " +
+                      textColor + ";}");
     }
 
     updateExtraSelection1();
