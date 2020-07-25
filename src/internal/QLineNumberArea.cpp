@@ -23,17 +23,14 @@ QSize QLineNumberArea::sizeHint() const
         return QWidget::sizeHint();
     }
 
-    int space = 0;
-    int lineCount = m_codeEditParent->document()->blockCount();
+    const int digits = QString::number(m_codeEditParent->document()->blockCount()).length();
+    int space;
 
-    for (int i = 0; i <= lineCount; ++i)
-    {
 #if QT_VERSION >= 0x050B00
-        space = 15 + m_codeEditParent->fontMetrics().horizontalAdvance(QString::number(i));
+    space = 15 + m_codeEditParent->fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
 #else
-        space = 15 + m_codeEditParent->fontMetrics().width(QLatin1Char(QString::number(i)));
+    space = 15 + m_codeEditParent->fontMetrics().width(QLatin1Char('9')) * digits;
 #endif
-    }
 
     return {space, 0};
 }
