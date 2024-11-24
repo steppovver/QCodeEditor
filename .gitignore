@@ -5,3 +5,4 @@ cmake-build-release/
 .kdev4/
 QCodeEditor.kdev4
 *~
+.DS_Store
