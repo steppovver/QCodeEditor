@@ -55,7 +55,8 @@ class QCodeEditor : public QPlainTextEdit
      * index.
      * @return Index.
      */
-    int getFirstVisibleBlock();
+    QTextBlock getFirstVisibleBlock();
+    QRectF getBlockBoundingGeometry(const QTextBlock &block);
 
     /**
      * @brief Method for setting highlighter.
@@ -223,6 +224,9 @@ class QCodeEditor : public QPlainTextEdit
      * @brief Slot, that toggle block comment of the selection.
      */
     void toggleBlockComment();
+
+    void lineNumberAreaPaintEvent(QPaintEvent *event);
+
 
   protected:
     /**

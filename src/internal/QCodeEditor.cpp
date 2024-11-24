@@ -23,6 +23,7 @@
 #include <QTextCharFormat>
 #include <QTextStream>
 #include <QToolTip>
+#include <QPainter>
 
 QCodeEditor::QCodeEditor(int defaultFontSize, QWidget *widget)
     : QPlainTextEdit(widget), m_highlighter(nullptr), m_syntaxStyle(nullptr),
@@ -414,6 +415,67 @@ void QCodeEditor::toggleBlockComment()
     setTextCursor(cursor);
 }
 
+void QCodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
+{
+    QPainter painter(m_lineNumberArea);
+
+           // Clearing rect to update
+    painter.fillRect(event->rect(), m_syntaxStyle->getFormat("Text").background().color());
+
+    auto block = firstVisibleBlock();
+    auto blockNumber = block.blockNumber();
+    auto top = qRound(blockBoundingGeometry(block).translated(contentOffset()).top());
+    auto bottom = top + qRound(blockBoundingRect(block).height());
+
+    auto currentLine = m_syntaxStyle->getFormat("CurrentLineNumber").foreground().color();
+    auto otherLines = m_syntaxStyle->getFormat("LineNumber").foreground().color();
+
+    painter.setFont(font());
+
+    while (block.isValid() && top <= event->rect().bottom())
+    {
+        if (block.isVisible() && bottom >= event->rect().top())
+        {
+            QString number = QString::number(blockNumber + 1);
+
+                   // if (m_squiggles.contains(blockNumber))
+                   // {
+                   //     QColor squiggleColor;
+                   //     switch (m_squiggles[blockNumber])
+                   //     {
+                   //     case QCodeEditor::SeverityLevel::Error:
+                   //         squiggleColor = m_syntaxStyle->getFormat("Error").underlineColor();
+                   //         break;
+                   //     case QCodeEditor::SeverityLevel::Warning:
+                   //         squiggleColor = m_syntaxStyle->getFormat("Warning").underlineColor();
+                   //         break;
+                   //     case QCodeEditor::SeverityLevel::Information:
+                   //         squiggleColor = m_syntaxStyle->getFormat("Warning").underlineColor();
+                   //         break;
+                   //     case QCodeEditor::SeverityLevel::Hint:
+                   //         squiggleColor = m_syntaxStyle->getFormat("Text").foreground().color();
+                   //         break;
+                   //     default:
+                   //         Q_UNREACHABLE();
+                   //         break;
+                   //     }
+                   //     painter.fillRect(0, top, 7, m_codeEditParent->fontMetrics().height(), squiggleColor);
+                   // }
+
+            // auto isCurrentLine = textCursor().blockNumber() == blockNumber;
+            // painter.setPen(isCurrentLine ? currentLine : otherLines);
+
+            painter.drawText(0, top, m_lineNumberArea->width(), fontMetrics().height(), Qt::AlignRight,
+                             number);
+        }
+
+        block = block.next();
+        top = bottom;
+        bottom = top + qRound(blockBoundingRect(block).height());
+        ++blockNumber;
+    }
+}
+
 void QCodeEditor::highlightParenthesis()
 {
     auto currentSymbol = charUnderCursor();
@@ -544,37 +606,14 @@ void QCodeEditor::paintEvent(QPaintEvent *e)
     QPlainTextEdit::paintEvent(e);
 }
 
-int QCodeEditor::getFirstVisibleBlock()
+QTextBlock QCodeEditor::getFirstVisibleBlock()
 {
-    // Detect the first block for which bounding rect - once translated
-    // in absolute coordinated - is contained by the editor's text area
+    return firstVisibleBlock();
+}
 
-    // Costly way of doing but since "blockBoundingGeometry(...)" doesn't
-    // exists for "QTextEdit"...
-
-    QTextCursor curs = QTextCursor(document());
-    curs.movePosition(QTextCursor::Start);
-    for (int i = 0; i < document()->blockCount(); ++i)
-    {
-        QTextBlock block = curs.block();
-
-        QRect r1 = viewport()->geometry();
-        QRect r2 = document()
-                       ->documentLayout()
-                       ->blockBoundingRect(block)
-                       .translated(viewport()->geometry().x(),
-                                   viewport()->geometry().y() - verticalScrollBar()->sliderPosition())
-                       .toRect();
-
-        if (r1.intersects(r2))
-        {
-            return i;
-        }
-
-        curs.movePosition(QTextCursor::NextBlock);
-    }
-
-    return 0;
+QRectF QCodeEditor::getBlockBoundingGeometry(const QTextBlock &block)
+{
+    return blockBoundingGeometry(block);
 }
 
 bool QCodeEditor::proceedCompleterBegin(QKeyEvent *e)
