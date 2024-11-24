@@ -1,7 +1,7 @@
 #pragma once
 
 // Qt
-#include <QTextEdit> // Required for inheritance
+#include <QPlainTextEdit> // Required for inheritance
 
 class QCompleter;
 class QLineNumberArea;
@@ -12,7 +12,7 @@ class QFramedTextAttribute;
 /**
  * @brief Class, that describes code editor.
  */
-class QCodeEditor : public QTextEdit
+class QCodeEditor : public QPlainTextEdit
 {
     Q_OBJECT
 
@@ -44,7 +44,7 @@ class QCodeEditor : public QTextEdit
      * @brief Constructor.
      * @param widget Pointer to parent widget.
      */
-    explicit QCodeEditor(QWidget *widget = nullptr);
+    explicit QCodeEditor(int defaultFontSize = 10, QWidget *widget = nullptr);
 
     // Disable copying
     QCodeEditor(const QCodeEditor &) = delete;
@@ -289,7 +289,7 @@ class QCodeEditor : public QTextEdit
      * @brief Method for initializing default
      * monospace font.
      */
-    void initFont();
+    void initFont(int defaultFontSize);
 
     /**
      * @brief Method for performing connection

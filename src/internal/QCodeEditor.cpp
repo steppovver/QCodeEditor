@@ -24,24 +24,24 @@
 #include <QTextStream>
 #include <QToolTip>
 
-QCodeEditor::QCodeEditor(QWidget *widget)
-    : QTextEdit(widget), m_highlighter(nullptr), m_syntaxStyle(nullptr), m_lineNumberArea(new QLineNumberArea(this)),
-      m_completer(nullptr), m_autoIndentation(true), m_replaceTab(true), m_extraBottomMargin(true),
-      m_tabReplace(QString(4, ' ')), extra1(), extra2(), extra_squiggles(), m_squiggler(),
+QCodeEditor::QCodeEditor(int defaultFontSize, QWidget *widget)
+    : QPlainTextEdit(widget), m_highlighter(nullptr), m_syntaxStyle(nullptr),
+      m_lineNumberArea(new QLineNumberArea(this)), m_completer(nullptr), m_autoIndentation(true), m_replaceTab(true),
+      m_extraBottomMargin(true), m_tabReplace(QString(4, ' ')), extra1(), extra2(), extra_squiggles(), m_squiggler(),
       m_parentheses({{'(', ')'}, {'{', '}'}, {'[', ']'}, {'\"', '\"'}, {'\'', '\''}})
 {
-    initFont();
+    initFont(defaultFontSize);
     performConnections();
     setMouseTracking(true);
 
     setSyntaxStyle(QSyntaxStyle::defaultStyle());
 }
 
-void QCodeEditor::initFont()
+void QCodeEditor::initFont(int defaultFontSize)
 {
     auto fnt = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     fnt.setFixedPitch(true);
-    fnt.setPointSize(10);
+    fnt.setPointSize(defaultFontSize);
 
     setFont(fnt);
 }
@@ -53,8 +53,8 @@ void QCodeEditor::performConnections()
 
     connect(verticalScrollBar(), &QScrollBar::valueChanged, this, [this](int) { m_lineNumberArea->update(); });
 
-    connect(this, &QTextEdit::cursorPositionChanged, this, &QCodeEditor::updateExtraSelection1);
-    connect(this, &QTextEdit::selectionChanged, this, &QCodeEditor::updateExtraSelection2);
+    connect(this, &QPlainTextEdit::cursorPositionChanged, this, &QCodeEditor::updateExtraSelection1);
+    connect(this, &QPlainTextEdit::selectionChanged, this, &QCodeEditor::updateExtraSelection2);
 }
 
 void QCodeEditor::setHighlighter(QStyleSyntaxHighlighter *highlighter)
@@ -100,7 +100,7 @@ void QCodeEditor::updateStyle()
         QString textColor = m_syntaxStyle->getFormat("Text").foreground().color().name();
         QString selectionBackground = m_syntaxStyle->getFormat("Selection").background().color().name();
 
-        setStyleSheet(QString("QTextEdit { background-color: %1; selection-background-color: %2; color: %3; }")
+        setStyleSheet(QString("QPlainTextEdit { background-color: %1; selection-background-color: %2; color: %3; }")
                           .arg(backgroundColor, selectionBackground, textColor));
     }
 
@@ -110,7 +110,7 @@ void QCodeEditor::updateStyle()
 
 void QCodeEditor::resizeEvent(QResizeEvent *e)
 {
-    QTextEdit::resizeEvent(e);
+    QPlainTextEdit::resizeEvent(e);
 
     updateLineGeometry();
     updateBottomMargin();
@@ -118,7 +118,7 @@ void QCodeEditor::resizeEvent(QResizeEvent *e)
 
 void QCodeEditor::changeEvent(QEvent *e)
 {
-    QTextEdit::changeEvent(e);
+    QPlainTextEdit::changeEvent(e);
     if (e->type() == QEvent::FontChange)
         updateBottomMargin();
 }
@@ -147,7 +147,7 @@ void QCodeEditor::wheelEvent(QWheelEvent *e)
         }
     }
     else
-        QTextEdit::wheelEvent(e);
+        QPlainTextEdit::wheelEvent(e);
 }
 
 void QCodeEditor::updateLineGeometry()
@@ -469,7 +469,7 @@ void QCodeEditor::highlightParenthesis()
         // Found
         if (counter == 0)
         {
-            ExtraSelection selection{};
+            QTextEdit::ExtraSelection selection{};
 
             auto directionEnum = direction < 0 ? QTextCursor::MoveOperation::Left : QTextCursor::MoveOperation::Right;
 
@@ -541,7 +541,7 @@ void QCodeEditor::highlightOccurrences()
 void QCodeEditor::paintEvent(QPaintEvent *e)
 {
     updateLineNumberArea(e->rect());
-    QTextEdit::paintEvent(e);
+    QPlainTextEdit::paintEvent(e);
 }
 
 int QCodeEditor::getFirstVisibleBlock()
@@ -848,7 +848,7 @@ void QCodeEditor::keyPressEvent(QKeyEvent *e)
             setTextCursor(cursor);
         }
 
-        QTextEdit::keyPressEvent(e);
+        QPlainTextEdit::keyPressEvent(e);
     }
 
     proceedCompleterEnd(e);
@@ -929,7 +929,7 @@ void QCodeEditor::focusInEvent(QFocusEvent *e)
         m_completer->setWidget(this);
     }
 
-    QTextEdit::focusInEvent(e);
+    QPlainTextEdit::focusInEvent(e);
 }
 
 bool QCodeEditor::event(QEvent *event)
@@ -968,7 +968,7 @@ bool QCodeEditor::event(QEvent *event)
 
         return true;
     }
-    return QTextEdit::event(event);
+    return QPlainTextEdit::event(event);
 }
 
 void QCodeEditor::insertCompletion(const QString &s)
