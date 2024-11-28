@@ -109,5 +109,5 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
 target_link_libraries(QCodeEditor
-    Qt6::Widgets
+    Qt::Widgets
 )
