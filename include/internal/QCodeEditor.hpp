@@ -44,7 +44,7 @@ class QCodeEditor : public QPlainTextEdit
      * @brief Constructor.
      * @param widget Pointer to parent widget.
      */
-    explicit QCodeEditor(int defaultFontSize = 10, QWidget *widget = nullptr);
+    QCodeEditor(int defaultFontSize = 10, QWidget *widget = nullptr);
 
     // Disable copying
     QCodeEditor(const QCodeEditor &) = delete;
