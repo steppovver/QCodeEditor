@@ -85,7 +85,9 @@ find_package(Qt6 COMPONENTS Widgets Network)
 if (NOT Qt6_FOUND)
     find_package(Qt5 REQUIRED COMPONENTS Widgets Network)
 else()
-    qt_standard_project_setup()
+    if (QT_VERSION_MINOR GREATER_EQUAL 3)
+        qt_standard_project_setup()
+    endif()
 endif()
 
 add_library(QCodeEditor STATIC
